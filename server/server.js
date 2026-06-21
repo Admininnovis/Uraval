@@ -37,6 +37,11 @@ app.get('/health', (req, res) => {
   res.json({ message: 'Server is running' });
 });
 
+// Root endpoint for Vercel
+app.get('/', (req, res) => {
+  res.send('Moi Kanakku API is successfully deployed and running!');
+});
+
 // Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -46,3 +51,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// Export app for Vercel serverless
+export default app;
