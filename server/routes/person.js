@@ -8,6 +8,7 @@ import {
   deletePerson,
   searchPeople,
   mergePeople,
+  splitPerson,
 } from '../controllers/personController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -29,6 +30,7 @@ router.post('/merge', mergePeople);
 router.get('/', getPeople);
 router.get('/search', searchPeople);
 router.get('/:id', getPersonById);
+router.post('/:id/split', splitPerson);
 
 router.put(
   '/:id',

@@ -70,7 +70,7 @@ const Dashboard = () => {
       <motion.div className="space-y-12 pb-20 mt-6" variants={containerVariants} initial="hidden" animate="visible">
 
         {/* 1. Ledger Cover Section */}
-        <motion.div variants={itemVariants} className="relative bg-ledger-paper rounded border-4 border-ledger-brown shadow-notebook mx-auto max-w-4xl p-10 md:p-16 text-center overflow-hidden">
+        <motion.div variants={itemVariants} className="relative bg-ledger-paper rounded border-4 border-ledger-brown shadow-notebook mx-auto max-w-4xl p-6 md:p-16 text-center overflow-hidden">
           <div className="absolute inset-0 opacity-40 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] pointer-events-none z-0"></div>
 
           {/* Watermarks */}
@@ -95,7 +95,7 @@ const Dashboard = () => {
 
             <div className="w-full max-w-md mx-auto border-t-2 border-b-2 border-ledger-brown py-6 my-8 md:my-10">
               <p className="text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-ledger-brown/80 mb-2">Total Ledger Balance</p>
-              <h2 className="text-4xl md:text-5xl font-serif font-bold text-ledger-ink break-words">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-ledger-ink break-words">
                 ₹{totalBalance.toLocaleString('en-IN')}
               </h2>
             </div>
@@ -116,18 +116,18 @@ const Dashboard = () => {
         </motion.div>
 
         {/* 2. Quick Actions (Ledger Tools) */}
-        <motion.div variants={itemVariants} className="flex justify-center gap-6 overflow-x-auto hide-scrollbar py-4 px-4 md:px-0">
-          <Link to="/events" className="flex items-center gap-3 px-8 py-4 bg-ledger-aged border-2 border-ledger-brown text-ledger-ink font-bold font-serif hover:bg-ledger-paper transition-colors shadow-sm">
+        <motion.div variants={itemVariants} className="flex justify-center gap-4 md:gap-6 flex-wrap py-4 px-2 w-full">
+          <Link to="/events" className="flex-1 min-w-[140px] sm:flex-none flex items-center justify-center gap-2 md:gap-3 px-4 md:px-8 py-3 md:py-4 bg-ledger-aged border-2 border-ledger-brown text-ledger-ink font-bold font-serif hover:bg-ledger-paper transition-colors shadow-sm">
             <BookOpen size={20} />
-            <span className="uppercase tracking-widest text-sm">New Event</span>
+            <span className="uppercase tracking-widest text-xs md:text-sm">New Event</span>
           </Link>
-          <Link to="/events" className="flex items-center gap-3 px-8 py-4 bg-ledger-aged border-2 border-ledger-brown text-ledger-ink font-bold font-serif hover:bg-ledger-paper transition-colors shadow-sm">
+          <Link to="/events" className="flex-1 min-w-[140px] sm:flex-none flex items-center justify-center gap-2 md:gap-3 px-4 md:px-8 py-3 md:py-4 bg-ledger-aged border-2 border-ledger-brown text-ledger-ink font-bold font-serif hover:bg-ledger-paper transition-colors shadow-sm">
             <Plus size={20} />
-            <span className="uppercase tracking-widest text-sm">New Entry</span>
+            <span className="uppercase tracking-widest text-xs md:text-sm">New Entry</span>
           </Link>
-          <Link to="/personal-ledger" className="flex items-center gap-3 px-8 py-4 bg-ledger-aged border-2 border-ledger-brown text-ledger-ink font-bold font-serif hover:bg-ledger-paper transition-colors shadow-sm">
+          <Link to="/personal-ledger" className="flex-1 min-w-[140px] sm:flex-none flex items-center justify-center gap-2 md:gap-3 px-4 md:px-8 py-3 md:py-4 bg-ledger-aged border-2 border-ledger-brown text-ledger-ink font-bold font-serif hover:bg-ledger-paper transition-colors shadow-sm">
             <HandCoins size={20} />
-            <span className="uppercase tracking-widest text-sm">Return Money</span>
+            <span className="uppercase tracking-widest text-xs md:text-sm text-center">Return Money</span>
           </Link>
         </motion.div>
 
@@ -137,7 +137,7 @@ const Dashboard = () => {
           <div className="lg:col-span-8 space-y-12">
 
             {/* 3. Financial Summary Table */}
-            <motion.div variants={itemVariants} className="bg-ledger-paper p-8 shadow-paper relative overflow-hidden">
+            <motion.div variants={itemVariants} className="bg-ledger-paper p-4 md:p-8 shadow-paper relative overflow-hidden">
               <div className="absolute inset-0 opacity-40 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] pointer-events-none z-0"></div>
 
               {/* Table Watermarks */}
@@ -180,11 +180,11 @@ const Dashboard = () => {
             <motion.div variants={itemVariants} className="relative">
               <div className="absolute -top-10 -right-10 w-48 h-48 pointer-events-none z-0 text-ledger-brown opacity-[0.03]"><StackedNotebooks className="w-full h-full" /></div>
 
-              <div className="flex justify-between items-end border-b-4 border-ledger-brown pb-3 mb-8 relative z-10">
-                <h2 className="text-3xl font-bold font-tamil text-ledger-ink flex items-center gap-3">
-                  <Library size={28} className="text-ledger-brown" /> Active Event Books
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b-4 border-ledger-brown pb-3 mb-8 relative z-10 gap-4 sm:gap-0">
+                <h2 className="text-2xl sm:text-3xl font-bold font-tamil text-ledger-ink flex items-center gap-3">
+                  <Library size={24} className="text-ledger-brown sm:w-7 sm:h-7" /> Active Event Books
                 </h2>
-                <Link to="/events" className="text-sm font-bold uppercase tracking-widest text-ledger-brown hover:text-ledger-ink transition-colors flex items-center gap-1">
+                <Link to="/events" className="text-xs sm:text-sm font-bold uppercase tracking-widest text-ledger-brown hover:text-ledger-ink transition-colors flex items-center gap-1">
                   View All Books <ArrowRight size={16} />
                 </Link>
               </div>
@@ -223,7 +223,7 @@ const Dashboard = () => {
 
           {/* RIGHT COLUMN: Insights / Notes */}
           <div className="lg:col-span-4">
-            <motion.div variants={itemVariants} className="bg-ledger-paper min-h-[600px] shadow-paper relative overflow-hidden ledger-margin-line p-8 pl-24 border-2 border-ledger-brown">
+            <motion.div variants={itemVariants} className="bg-ledger-paper min-h-[600px] shadow-paper relative overflow-hidden ledger-margin-line p-6 pl-20 md:p-8 md:pl-24 border-2 border-ledger-brown">
               <div className="absolute inset-0 opacity-30 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] pointer-events-none z-0"></div>
               <div className="absolute inset-0 bg-ledger-ruled pointer-events-none z-0"></div>
 

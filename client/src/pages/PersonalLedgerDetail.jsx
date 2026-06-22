@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import NotebookView from '../components/NotebookView';
 import api from '../services/api';
-import { User, ChevronLeft, ChevronRight, Edit2, X, Plus, History, ChevronDown, ChevronUp, Tag, ArrowDownLeft, ArrowUpRight, Book } from 'lucide-react';
+import { User, ChevronLeft, ChevronRight, Edit2, X, Plus, History, ChevronDown, ChevronUp, Tag, ArrowDownLeft, ArrowUpRight, Book, Split } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import { BananaTree, TempleGopuram, KolamPattern, CornerMark, PalmLeafManuscript } from '../components/Illustrations';
@@ -119,6 +119,21 @@ const PersonalLedgerDetail = () => {
 
   const toggleHistory = (itemId) => {
     setExpandedHistoryId(prev => prev === itemId ? null : itemId);
+  };
+
+  const handleSplitTransaction = async (item) => {
+    if (!window.confirm(t('personalLedgerDetail.confirmSplit') || 'Are you sure you want to separate this transaction into a new person with the same name?')) return;
+    
+    try {
+      await api.post(`/people/${id}/split`, {
+        transactionId: item._id,
+        source: item.source
+      });
+      fetchPersonDetails();
+    } catch (error) {
+      console.error('Error splitting transaction:', error);
+      alert(error.response?.data?.message || 'Failed to split transaction');
+    }
   };
 
   if (loading) return (
@@ -289,14 +304,21 @@ const PersonalLedgerDetail = () => {
                         </div>
 
                         <div className="flex justify-between items-end mt-2">
-                          <h3 className="font-tamil font-bold text-base md:text-xl text-ledger-ink">{item.description}</h3>
+                          <h3 className="font-tamil font-bold text-base md:text-xl text-ledger-ink flex-1">{item.description}</h3>
 
-                          {/* Hover Edit Button */}
-                          {item.source === 'personal' && (
-                            <button onClick={() => handleEditClick(item)} className="p-2 md:p-2.5 text-ledger-brown hover:bg-ledger-brown/10 rounded-full transition-all opacity-0 group-hover:opacity-100 -mb-1 -mr-1">
-                              <Edit2 size={14} />
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity -mb-1 -mr-1">
+                            {/* Split Transaction Button */}
+                            <button onClick={() => handleSplitTransaction(item)} title="Separate to New Person" className="p-2 md:p-2.5 text-ledger-brown hover:bg-ledger-brown/10 rounded-full transition-all">
+                              <Split size={14} />
                             </button>
-                          )}
+
+                            {/* Hover Edit Button */}
+                            {item.source === 'personal' && (
+                              <button onClick={() => handleEditClick(item)} title="Edit Entry" className="p-2 md:p-2.5 text-ledger-brown hover:bg-ledger-brown/10 rounded-full transition-all">
+                                <Edit2 size={14} />
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         {/* Expandable Edit History */}

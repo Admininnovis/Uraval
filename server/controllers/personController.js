@@ -229,3 +229,74 @@ export const mergePeople = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const splitPerson = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { transactionId, source } = req.body;
+
+    if (!transactionId || !source) {
+      return res.status(400).json({ message: 'Transaction ID and source are required' });
+    }
+
+    const oldPerson = await Person.findOne({ _id: id, createdBy: req.user.id });
+    if (!oldPerson) {
+      return res.status(404).json({ message: 'Person not found' });
+    }
+
+    const newVillage = oldPerson.village ? `${oldPerson.village} (splited)` : '(splited)';
+
+    let newPerson = await Person.findOne({
+      name: oldPerson.name,
+      village: { $regex: new RegExp(`^${newVillage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+      createdBy: req.user.id
+    });
+
+    if (!newPerson) {
+      newPerson = new Person({
+        name: oldPerson.name,
+        village: newVillage,
+        mobile: oldPerson.mobile,
+        notes: oldPerson.notes,
+        createdBy: req.user.id,
+      });
+      await newPerson.save();
+    }
+
+    let amount = 0;
+
+    if (source === 'event') {
+      const entry = await EventEntry.findOne({ _id: transactionId, personId: id });
+      if (!entry) return res.status(404).json({ message: 'Event entry not found' });
+
+      amount = entry.amount;
+      entry.personId = newPerson._id;
+      await entry.save();
+
+      oldPerson.totalReceived = (oldPerson.totalReceived || 0) - amount;
+      newPerson.totalReceived = (newPerson.totalReceived || 0) + amount;
+    } else if (source === 'personal') {
+      const ledger = await PersonalLedger.findOne({ _id: transactionId, personId: id });
+      if (!ledger) return res.status(404).json({ message: 'Personal ledger entry not found' });
+
+      amount = ledger.amount;
+      ledger.personId = newPerson._id;
+      await ledger.save();
+
+      oldPerson.totalReturned = (oldPerson.totalReturned || 0) - amount;
+      newPerson.totalReturned = (newPerson.totalReturned || 0) + amount;
+    } else {
+      return res.status(400).json({ message: 'Invalid source' });
+    }
+
+    if (oldPerson.totalReceived < 0) oldPerson.totalReceived = 0;
+    if (oldPerson.totalReturned < 0) oldPerson.totalReturned = 0;
+
+    await oldPerson.save();
+    await newPerson.save();
+
+    res.json({ message: 'Transaction separated successfully', newPersonId: newPerson._id });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
