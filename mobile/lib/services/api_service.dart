@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_endpoints.dart';
+import 'network_status_service.dart';
 
 class ApiService {
   static const String _tokenKey = 'uravin_jwt_token';
@@ -59,6 +60,20 @@ class ApiService {
 
   static const Duration _timeout = Duration(seconds: 15);
 
+  static Never _handleNetworkError(dynamic e) {
+    NetworkStatusService.markOffline();
+    final errStr = e.toString().toLowerCase();
+    if (errStr.contains('socketexception') ||
+        errStr.contains('failed host lookup') ||
+        errStr.contains('connection refused') ||
+        errStr.contains('clientexception') ||
+        errStr.contains('os error') ||
+        errStr.contains('timeout')) {
+      throw Exception('NETWORK_OFFLINE');
+    }
+    throw Exception('Network error: ${e.toString()}');
+  }
+
   static Future<dynamic> get(String url, {bool needsAuth = true}) async {
     try {
       final headers = await _headers(needsAuth: needsAuth);
@@ -67,7 +82,7 @@ class ApiService {
           .timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
-      throw Exception('Network error: ${e.toString()}');
+      _handleNetworkError(e);
     }
   }
 
@@ -87,7 +102,7 @@ class ApiService {
           .timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
-      throw Exception('Network error: ${e.toString()}');
+      _handleNetworkError(e);
     }
   }
 
@@ -107,7 +122,7 @@ class ApiService {
           .timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
-      throw Exception('Network error: ${e.toString()}');
+      _handleNetworkError(e);
     }
   }
 
@@ -119,11 +134,12 @@ class ApiService {
           .timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
-      throw Exception('Network error: ${e.toString()}');
+      _handleNetworkError(e);
     }
   }
 
   static dynamic _handleResponse(http.Response response) {
+    NetworkStatusService.markOnline();
     dynamic body;
     try {
       body = jsonDecode(response.body);

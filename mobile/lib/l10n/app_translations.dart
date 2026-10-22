@@ -136,7 +136,11 @@ class AppTranslations {
     'delete_account_desc': 'Permanently delete your account and all data',
     'delete_account_confirm': 'Are you sure you want to delete your account?',
     'delete_account_warning': 'This action is irreversible. All your events, ceremony records, and personal ledger entries will be permanently deleted.',
-    'deleting_account': 'Deleting account...',
+    // Network & Connectivity
+    'no_internet': 'No Internet Connection',
+    'no_internet_desc': 'Please connect to Wi-Fi or mobile data to continue',
+    'connection_restored': 'Connection Restored • Back Online',
+    'retry': 'Retry',
   };
 
   static const Map<String, String> ta = {
@@ -276,6 +280,10 @@ class AppTranslations {
     'delete_account_desc': 'உங்கள் கணக்கு மற்றும் அனைத்து தரவுகளையும் நிரந்தரமாக நீக்குங்கள்',
     'delete_account_confirm': 'உங்கள் கணக்கை நிரந்தரமாக நீக்க விரும்புகிறீர்களா?',
     'delete_account_warning': 'இந்த செயலை மாற்ற முடியாது. உங்கள் அனைத்து நிகழ்வுகள், மொய் பதிவுகள் மற்றும் தனிப்பட்ட கணக்குகள் அனைத்தும் நிரந்தரமாக அழிக்கப்படும்.',
-    'deleting_account': 'கணக்கு நீக்கப்படுகிறது...',
+    // Network & Connectivity
+    'no_internet': 'இணைய இணைப்பு இல்லை',
+    'no_internet_desc': 'தொடர தயவுசெய்து இணைய இணைப்பில் இணையவும்',
+    'connection_restored': 'இணைப்பு மீண்டும் கிடைத்தது • ஆன்லைன்',
+    'retry': 'மீண்டும் முயற்சி',
   };
 }

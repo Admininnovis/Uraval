@@ -9,6 +9,7 @@ import 'providers/ledger_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'services/api_service.dart';
+import 'widgets/network_status_banner.dart';
 import 'widgets/uravin_loading.dart';
 
 void main() async {
@@ -76,6 +77,8 @@ class UravinApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
+      builder: (context, child) =>
+          NetworkStatusBanner(child: child ?? const SizedBox.shrink()),
       home: const AppRootRouter(),
     );
   }

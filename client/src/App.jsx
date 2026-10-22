@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import SyncIndicator from './components/SyncIndicator';
+import NetworkBanner from './components/NetworkBanner';
 
 // Auth Pages
 import Login from './pages/Login';
@@ -22,6 +23,7 @@ function App() {
     <Router>
       <LanguageProvider>
         <AuthProvider>
+          <NetworkBanner />
           <SyncIndicator />
           <Routes>
           <Route path="/login" element={<Login />} />
