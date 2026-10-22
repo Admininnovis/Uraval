@@ -52,8 +52,8 @@ export const LegalModal = ({ isOpen, onClose, type = 'privacy' }) => {
                 </h4>
                 <p>
                   {isTamil 
-                    ? 'உறவின் செயலியில் உங்கள் பெயர், மின்னஞ்சல் முகவரி, நிகழ்வு விவரங்கள் (திருமணம், காதணி விழா, புதுமனை புகுவிழா போன்றவை), மற்றும் மொய் வரவு/செலவு பதிவுகள் மட்டுமே சேமிக்கப்படுகின்றன.'
-                    : 'Uravin collects your name, email address, event details (weddings, ceremonies), and financial ledger entries for recording Moi and personal gifts.'}
+                    ? 'உறவு செயலியில் உங்கள் பெயர், மின்னஞ்சல் முகவரி, நிகழ்வு விவரங்கள் (திருமணம், காதணி விழா, புதுமனை புகுவிழா போன்றவை), மற்றும் மொய் வரவு/செலவு பதிவுகள் மட்டுமே சேமிக்கப்படுகின்றன.'
+                    : 'Uravuu collects your name, email address, event details (weddings, ceremonies), and financial ledger entries for recording Moi and personal gifts.'}
                 </p>
               </div>
 
@@ -98,8 +98,8 @@ export const LegalModal = ({ isOpen, onClose, type = 'privacy' }) => {
                 </h4>
                 <p>
                   {isTamil 
-                    ? 'உறவின் தளத்தில் கணக்கு தொடங்குவதன் மூலம் அல்லது சேவைகளைப் பயன்படுத்துவதன் மூலம் இந்த பயன்பாட்டு விதிமுறைகளை நீங்கள் ஏற்றுக்கொள்கிறீர்கள்.'
-                    : 'By creating an account or using Uravin, you agree to comply with and be bound by these Terms and Conditions.'}
+                    ? 'உறவு தளத்தில் கணக்கு தொடங்குவதன் மூலம் அல்லது சேவைகளைப் பயன்படுத்துவதன் மூலம் இந்த பயன்பாட்டு விதிமுறைகளை நீங்கள் ஏற்றுக்கொள்கிறீர்கள்.'
+                    : 'By creating an account or using Uravuu, you agree to comply with and be bound by these Terms and Conditions.'}
                 </p>
               </div>
 
@@ -109,8 +109,8 @@ export const LegalModal = ({ isOpen, onClose, type = 'privacy' }) => {
                 </h4>
                 <p>
                   {isTamil 
-                    ? 'உறவின் தளம் பாரம்பரிய மொய் கணக்குகள், குடும்ப சுபநிகழ்ச்சிகள் மற்றும் தனிநபர் வரவு-செலவு கணக்குகளை டிஜிட்டல் முறையில் பாதுகாப்பாக பராமரிப்பதற்காக வடிவமைக்கப்பட்டுள்ளது.'
-                    : 'Uravin is designed to facilitate digital management of traditional Moi ceremony contributions, gift accounting, and family records.'}
+                    ? 'உறவு தளம் பாரம்பரிய மொய் கணக்குகள், குடும்ப சுபநிகழ்ச்சிகள் மற்றும் தனிநபர் வரவு-செலவு கணக்குகளை டிஜிட்டல் முறையில் பாதுகாப்பாக பராமரிப்பதற்காக வடிவமைக்கப்பட்டுள்ளது.'
+                    : 'Uravuu is designed to facilitate digital management of traditional Moi ceremony contributions, gift accounting, and family records.'}
                 </p>
               </div>
 
@@ -131,8 +131,8 @@ export const LegalModal = ({ isOpen, onClose, type = 'privacy' }) => {
                 </h4>
                 <p>
                   {isTamil 
-                    ? 'உறவின் தளத்தின் வடிவமைப்பு, பாரம்பரிய சின்னங்கள், மற்றும் மென்பொருள் அனைத்தும் பதிப்புரிமை பெற்றவையாகும்.'
-                    : 'All proprietary software, heritage designs, logos, and booklet styling belong to Uravin and are protected by law.'}
+                    ? 'உறவு தளத்தின் வடிவமைப்பு, பாரம்பரிய சின்னங்கள், மற்றும் மென்பொருள் அனைத்தும் பதிப்புரிமை பெற்றவையாகும்.'
+                    : 'All proprietary software, heritage designs, logos, and booklet styling belong to Uravuu and are protected by law.'}
                 </p>
               </div>
             </>

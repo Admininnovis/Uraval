@@ -7,12 +7,12 @@ class AppTranslations {
     'nav_settings': 'Settings',
 
     // App Branding
-    'app_name': 'Uravin',
+    'app_name': 'Uravuu',
     'app_subtitle': 'Traditional Records • Digital Management',
     'traditional_records': 'TRADITIONAL RECORDS',
 
     // Auth
-    'login_title': 'Sign In to Uravin',
+    'login_title': 'Sign In to Uravuu',
     'login_subtitle': 'Enter your credentials to manage your traditional ledgers',
     'email_address': 'Email Address',
     'email_placeholder': 'name@example.com',
@@ -21,7 +21,7 @@ class AppTranslations {
     'forgot_password': 'Forgot Password?',
     'sign_in': 'Sign In',
     'signing_in': 'Signing in...',
-    'new_to_uravin': 'New to Uravin?',
+    'new_to_uravin': 'New to Uravuu?',
     'create_account': 'Create Account',
     'full_name': 'Full Name',
     'name_placeholder': 'e.g. S. Jayakumar',
@@ -122,10 +122,13 @@ class AppTranslations {
     'summary_page': 'Ledger Summary',
 
     // Legal & Privacy
+    'about_uravin': 'About Uravuu',
+    'about_uraval': 'About Uravuu',
+    'about_uravuu': 'About Uravuu',
     'privacy_policy': 'Privacy Policy',
     'privacy_policy_desc': 'How we safeguard your financial and event records',
     'terms_conditions': 'Terms & Conditions',
-    'terms_conditions_desc': 'Guidelines and terms for using Uravin',
+    'terms_conditions_desc': 'Guidelines and terms for using Uravuu',
     'legal_privacy': 'Legal & Policies',
     'by_registering_agree': 'By creating an account, you agree to our',
     'and': 'and',
@@ -154,12 +157,12 @@ class AppTranslations {
     'nav_settings': 'அமைப்புகள்',
 
     // App Branding
-    'app_name': 'உறவின்',
+    'app_name': 'உறவு',
     'app_subtitle': 'பாரம்பரியக் குறிப்பேடு • நவீன கணக்கு',
     'traditional_records': 'பாரம்பரியக் கணக்கு',
 
     // Auth
-    'login_title': 'உறவின் கணக்கில் உள்நுழைக',
+    'login_title': 'உறவு கணக்கில் உள்நுழைக',
     'login_subtitle': 'உங்கள் மொய் குறிப்பேடுகளை நிர்வகிக்க உள்நுழையவும்',
     'email_address': 'மின்னஞ்சல் முகவரி',
     'email_placeholder': 'பெயர்@example.com',
@@ -168,7 +171,7 @@ class AppTranslations {
     'forgot_password': 'கடவுச்சொல் மறந்ததா?',
     'sign_in': 'உள்நுழைக',
     'signing_in': 'உள்நுழைகிறது...',
-    'new_to_uravin': 'உறவின் கணக்கில் புதியவரா?',
+    'new_to_uravin': 'உறவு கணக்கில் புதியவரா?',
     'create_account': 'புதிய கணக்கு',
     'full_name': 'முழுப் பெயர்',
     'name_placeholder': 'உ.ம்: செ. ஜெயக்குமார்',
@@ -269,10 +272,13 @@ class AppTranslations {
     'summary_page': 'சுருக்க விபரம்',
 
     // Legal & Privacy
+    'about_uravin': 'உறவு பற்றி',
+    'about_uraval': 'உறவு பற்றி',
+    'about_uravuu': 'உறவு பற்றி',
     'privacy_policy': 'தனியுரிமைக் கொள்கை',
     'privacy_policy_desc': 'உங்கள் பதிவுகளின் பாதுகாப்பு மற்றும் விதிமுறைகள்',
     'terms_conditions': 'விதிமுறைகள் மற்றும் நிபந்தனைகள்',
-    'terms_conditions_desc': 'உறவின் பயன்பாட்டு வழிகாட்டுதல்கள்',
+    'terms_conditions_desc': 'உறவு பயன்பாட்டு வழிகாட்டுதல்கள்',
     'legal_privacy': 'சட்டம் மற்றும் கொள்கைகள்',
     'by_registering_agree': 'கணக்கு தொடங்குவதன் மூலம், நீங்கள் எங்கள்',
     'and': 'மற்றும்',

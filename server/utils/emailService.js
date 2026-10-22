@@ -26,24 +26,24 @@ const getTransporter = () => {
 export const sendWelcomeEmail = async ({ name, email }) => {
   try {
     const transporter = getTransporter();
-    const fromAddress = `"Uravin" <${process.env.SMTP_USER || 'admin@tarvinoinnovis.com'}>`;
+    const fromAddress = `"Uravuu" <${process.env.SMTP_USER || 'admin@tarvinoinnovis.com'}>`;
 
     const mailOptions = {
       from: fromAddress,
       to: email,
-      subject: 'Welcome to Uravin | உங்கள் கணக்கு தொடங்கப்பட்டது',
+      subject: 'Welcome to Uravuu | உங்கள் கணக்கு தொடங்கப்பட்டது',
       html: `
         <div style="font-family: Arial, sans-serif; background-color: #F7F3EB; padding: 30px; color: #432C20;">
           <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 25px; border: 1px solid #DDD1BF; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
             <div style="text-align: center; border-bottom: 2px solid #EFE6D7; padding-bottom: 20px;">
-              <h1 style="color: #B68A3D; margin: 0; font-size: 26px;">மொய் கணக்கு • Uravin</h1>
+              <h1 style="color: #B68A3D; margin: 0; font-size: 26px;">மொய் கணக்கு • Uravuu</h1>
               <p style="color: #7A6553; font-size: 13px; margin: 5px 0 0 0; text-transform: uppercase; letter-spacing: 1px;">Traditional Records • Digital Management</p>
             </div>
             
             <div style="padding: 25px 0;">
               <h2 style="color: #432C20; margin-top: 0;">Welcome, ${name}!</h2>
               <p style="font-size: 15px; line-height: 1.6; color: #555;">
-                Thank you for creating an account with <strong>Uravin</strong>. Your account has been registered successfully with the email address: <strong>${email}</strong>.
+                Thank you for creating an account with <strong>Uravuu</strong>. Your account has been registered successfully with the email address: <strong>${email}</strong>.
               </p>
               <p style="font-size: 15px; line-height: 1.6; color: #555;">
                 You can now record event ledgers (Marriage, Seemantham, Temple events) and personal ledgers with ease and peace of mind.
@@ -57,7 +57,7 @@ export const sendWelcomeEmail = async ({ name, email }) => {
             </div>
             
             <div style="border-top: 1px solid #EFE6D7; padding-top: 20px; text-align: center; font-size: 12px; color: #999;">
-              <p style="margin: 0;">Uravin • Tarvino Innovis</p>
+              <p style="margin: 0;">Uravuu • Tarvino Innovis</p>
               <p style="margin: 5px 0 0 0;">If you did not create this account, please ignore this email.</p>
             </div>
           </div>
@@ -80,7 +80,7 @@ export const sendWelcomeEmail = async ({ name, email }) => {
 export const sendPasswordResetOtpEmail = async ({ name, email, otp }) => {
   try {
     const transporter = getTransporter();
-    const fromAddress = `"Uravin Support" <${process.env.SMTP_USER || 'admin@tarvinoinnovis.com'}>`;
+    const fromAddress = `"Uravuu Support" <${process.env.SMTP_USER || 'admin@tarvinoinnovis.com'}>`;
 
     const mailOptions = {
       from: fromAddress,
@@ -90,14 +90,14 @@ export const sendPasswordResetOtpEmail = async ({ name, email, otp }) => {
         <div style="font-family: Arial, sans-serif; background-color: #F7F3EB; padding: 30px; color: #432C20;">
           <div style="max-width: 550px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 25px; border: 1px solid #DDD1BF; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
             <div style="text-align: center; border-bottom: 2px solid #EFE6D7; padding-bottom: 20px;">
-              <h1 style="color: #B68A3D; margin: 0; font-size: 24px;">Uravin • மொய் கணக்கு</h1>
+              <h1 style="color: #B68A3D; margin: 0; font-size: 24px;">Uravuu • மொய் கணக்கு</h1>
               <p style="color: #7A6553; font-size: 12px; margin: 4px 0 0 0; text-transform: uppercase; letter-spacing: 1px;">Password Reset Request</p>
             </div>
             
             <div style="padding: 25px 0; text-align: center;">
               <h2 style="color: #432C20; margin-top: 0; font-size: 18px;">Hello ${name || 'User'},</h2>
               <p style="font-size: 14px; line-height: 1.6; color: #555;">
-                We received a request to reset the password for your Uravin account. Use the following One-Time Password (OTP) to complete the reset:
+                We received a request to reset the password for your Uravuu account. Use the following One-Time Password (OTP) to complete the reset:
               </p>
               
               <div style="display: inline-block; background-color: #FAF7F0; border: 2px dashed #B68A3D; border-radius: 10px; padding: 15px 30px; margin: 20px 0;">
@@ -111,7 +111,7 @@ export const sendPasswordResetOtpEmail = async ({ name, email, otp }) => {
             
             <div style="border-top: 1px solid #EFE6D7; padding-top: 20px; text-align: center; font-size: 12px; color: #999;">
               <p style="margin: 0;">If you did not request this password reset, please secure your email account.</p>
-              <p style="margin: 5px 0 0 0;">Uravin Support</p>
+              <p style="margin: 5px 0 0 0;">Uravuu Support</p>
             </div>
           </div>
         </div>
@@ -133,7 +133,7 @@ export const sendPasswordResetOtpEmail = async ({ name, email, otp }) => {
 export const sendLoginNotificationEmail = async ({ name, email, ip, userAgent }) => {
   try {
     const transporter = getTransporter();
-    const fromAddress = `"Uravin Security" <${process.env.SMTP_USER || 'admin@tarvinoinnovis.com'}>`;
+    const fromAddress = `"Uravuu Security" <${process.env.SMTP_USER || 'admin@tarvinoinnovis.com'}>`;
     const timeString = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
     const mailOptions = {
@@ -144,7 +144,7 @@ export const sendLoginNotificationEmail = async ({ name, email, ip, userAgent })
         <div style="font-family: Arial, sans-serif; background-color: #F7F3EB; padding: 30px; color: #432C20;">
           <div style="max-width: 550px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 25px; border: 1px solid #DDD1BF;">
             <div style="text-align: center; border-bottom: 2px solid #EFE6D7; padding-bottom: 15px;">
-              <h2 style="color: #B68A3D; margin: 0; font-size: 22px;">Uravin Security Alert</h2>
+              <h2 style="color: #B68A3D; margin: 0; font-size: 22px;">Uravuu Security Alert</h2>
             </div>
             
             <div style="padding: 20px 0;">
@@ -167,7 +167,7 @@ export const sendLoginNotificationEmail = async ({ name, email, ip, userAgent })
             </div>
             
             <div style="border-top: 1px solid #EFE6D7; padding-top: 15px; text-align: center; font-size: 11px; color: #999;">
-              Uravin Automated Security Notification
+              Uravuu Automated Security Notification
             </div>
           </div>
         </div>

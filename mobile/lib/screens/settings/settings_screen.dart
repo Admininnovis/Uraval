@@ -6,6 +6,7 @@ import '../../providers/language_provider.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/legal_dialogs.dart';
+import '../../widgets/uravin_loading.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -125,9 +126,9 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // About Uravin
+            // About Uravuu
             _SectionContainer(
-              title: lang.t('about_uravin'),
+              title: lang.t('about_uravuu'),
               subtitle: 'v1.0.0 • Digital Heritage',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +148,7 @@ class SettingsScreen extends StatelessWidget {
                       const SizedBox(width: 10),
                       const Expanded(
                         child: Text(
-                          'Uravin (உறவின்) — Traditional Moi Ledgers & Honor Books',
+                          'Uravuu (உறவு) — Traditional Moi Ledgers & Honor Books',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -345,12 +346,8 @@ class SettingsScreen extends StatelessWidget {
                         backgroundColor: AppColors.background,
                         content: Row(
                           children: [
-                            const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.error,
-                              ),
-                            ),
-                            const SizedBox(width: 18),
+                            const UravinLoading(size: 32),
+                            const SizedBox(width: 16),
                             Expanded(
                               child: Text(
                                 lang.t('deleting_account'),

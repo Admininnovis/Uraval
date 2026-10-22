@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import 'uravin_loading.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
@@ -25,7 +26,7 @@ class CustomButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final bgColor = isSecondary ? AppColors.surface : AppColors.primary;
     final fgColor = isSecondary ? AppColors.primary : AppColors.goldAccent;
-    final borderColor = isSecondary ? AppColors.border : AppColors.gold.withOpacity(0.4);
+    final borderColor = isSecondary ? AppColors.border : AppColors.gold.withValues(alpha: 0.4);
 
     return SizedBox(
       width: width ?? double.infinity,
@@ -36,7 +37,7 @@ class CustomButton extends StatelessWidget {
           backgroundColor: bgColor,
           foregroundColor: fgColor,
           elevation: isSecondary ? 0 : 2,
-          shadowColor: AppColors.primaryDark.withOpacity(0.2),
+          shadowColor: AppColors.primaryDark.withValues(alpha: 0.2),
           padding: const EdgeInsets.symmetric(horizontal: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -44,13 +45,10 @@ class CustomButton extends StatelessWidget {
           ),
         ),
         child: isLoading
-            ? SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.2,
-                  valueColor: AlwaysStoppedAnimation<Color>(fgColor),
-                ),
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: UravinLoading(size: 24),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,

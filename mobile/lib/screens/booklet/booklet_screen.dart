@@ -763,7 +763,7 @@ class _BookletScreenState extends State<BookletScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Uravin • Traditional Ledgers',
+                      'Uravuu • Traditional Ledgers',
                       style: TextStyle(
                         fontSize: 10,
                         color: AppColors.textSubtle.withValues(alpha: 0.8),

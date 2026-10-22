@@ -51,11 +51,11 @@ const TopNav = () => {
         <Link to="/" className="flex items-center gap-2.5 text-[#432C20] hover:opacity-90 transition-opacity">
           <img
             src={uravinLogo}
-            alt="Uravin Logo"
+            alt="Uravuu Logo"
             className="w-8 h-8 md:w-9 md:h-9 object-contain rounded-full border border-[#B68A3D]/50 shadow-xs"
           />
           <span className="font-serif font-bold text-xl md:text-2xl text-[#432C20] tracking-tight">
-            Uravin
+            {language === 'ta' ? 'உறவு' : 'Uravuu'}
           </span>
         </Link>
 

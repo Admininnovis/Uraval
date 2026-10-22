@@ -167,12 +167,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       },
                 child: isSaving
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.goldAccent,
-                        ),
+                        width: 22,
+                        height: 22,
+                        child: UravinLoading(size: 22),
                       )
                     : Text(lang.t('save')),
               ),

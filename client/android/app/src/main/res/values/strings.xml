@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Moi Kanakku</string>
-    <string name="title_activity_main">Moi Kanakku</string>
+    <string name="app_name">Uravuu</string>
+    <string name="title_activity_main">Uravuu</string>
     <string name="package_name">com.tarvinoinnovis.moikanakku</string>
     <string name="custom_url_scheme">com.tarvinoinnovis.moikanakku</string>
 </resources>

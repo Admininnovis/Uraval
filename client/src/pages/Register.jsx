@@ -91,13 +91,13 @@ const Register = () => {
             <div className="flex justify-center mb-3">
               <img
                 src={uravinLogo}
-                alt="Uravin Logo"
+                alt="Uravuu Logo"
                 className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-full border-2 border-[#B68A3D] shadow-md bg-[#FAF7F0] p-1"
               />
             </div>
             <div className="inline-flex items-center justify-center gap-2 mb-1">
               <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#432C20]">
-                Uravin
+                Uravuu
               </h1>
               <img
                 src={vanakkamHandsImg}
@@ -106,7 +106,7 @@ const Register = () => {
               />
             </div>
             <p className="text-[#B68A3D] text-xs sm:text-[14px] font-bold uppercase mt-0.5">
-              {language === 'ta' ? 'உறவின் • டிஜிட்டல் பதிவேடு' : 'Uravin • Digital Ledger'}
+              {language === 'ta' ? 'உறவு • டிஜிட்டல் பதிவேடு' : 'Uravuu • Digital Ledger'}
             </p>
             <p className="text-stone-600 text-xs sm:text-[14px] mt-1.5 font-sans leading-relaxed">
               {t('auth.createYourAccount')}

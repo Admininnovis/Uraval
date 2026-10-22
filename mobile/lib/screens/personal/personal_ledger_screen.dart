@@ -143,12 +143,9 @@ class _PersonalLedgerScreenState extends State<PersonalLedgerScreen> {
                       },
                 child: isSaving
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.goldAccent,
-                        ),
+                        width: 22,
+                        height: 22,
+                        child: UravinLoading(size: 22),
                       )
                     : Text(lang.t('add_person_btn')),
               ),
@@ -990,7 +987,7 @@ class _PersonalLedgerScreenState extends State<PersonalLedgerScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Uravin • Personal Directory',
+                      'Uravuu • Personal Directory',
                       style: TextStyle(
                         fontSize: 9.5,
                         color: AppColors.textSubtle.withValues(alpha: 0.8),

@@ -60,7 +60,7 @@ class UravinApp extends StatelessWidget {
     );
 
     return MaterialApp(
-      title: 'Uravin',
+      title: 'Uravuu',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -119,7 +119,7 @@ class _SplashScreen extends StatelessWidget {
             const UravinLoading(size: 90),
             const SizedBox(height: 20),
             const Text(
-              'Uravin',
+              'Uravuu',
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w800,

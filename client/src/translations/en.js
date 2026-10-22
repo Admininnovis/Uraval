@@ -232,7 +232,7 @@ const en = {
     totalCollection: "Total Collection",
     totalEntries: "Total Entries",
     ledgerBook: "Ledger Book",
-    moiKanakku: "Uravin"
+    moiKanakku: "Uravuu"
   },
   peopleDirectory: {
     title: "People Directory",
@@ -296,13 +296,13 @@ const en = {
     newPassword: "New Password",
     confirmNewPassword: "Confirm New Password",
     updating: "Updating...",
-    about: "About Uravin",
+    about: "About Uravuu",
     application: "Application",
     version: "Version",
     stableEdition: "1.0.0 (Stable Edition)",
     tagline: "Tagline",
     taglineText: "Traditional Records. Digital Management.",
-    description: "Uravin is a digital record management system designed specifically for Tamil families to maintain and track traditional Moi records.",
+    description: "Uravuu is a digital record management system designed specifically for Tamil families to maintain and track traditional Moi records.",
     quote: "“Crafted with reverence for traditional village accounting.”",
     privacyPolicy: "Privacy Policy",
     termsAndConditions: "Terms & Conditions",
@@ -319,7 +319,7 @@ const en = {
     passwordPlaceholder: "••••••••",
     signIn: "Sign In",
     signingIn: "Signing in...",
-    newToMoiKanakku: "New to Uravin?",
+    newToMoiKanakku: "New to Uravuu?",
     createAccountLink: "Create an account",
     createYourAccount: "Create Your Account",
     fullName: "Full Name",

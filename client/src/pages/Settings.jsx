@@ -233,7 +233,7 @@ const Settings = () => {
             <div className="border-t border-[#DDD1BF]/60 mt-3.5 pt-3">
               <p className="text-stone-600 text-xs sm:text-sm leading-relaxed">
                 {t('settings.description') ||
-                  'Uravin is a digital record management system designed specifically for Tamil families to maintain and track traditional Moi records.'}
+                  'Uravuu is a digital record management system designed specifically for Tamil families to maintain and track traditional Moi records.'}
               </p>
               <p className="text-[11px] text-stone-400 mt-2 font-serif italic text-right">
                 {t('settings.quote')}

@@ -41,7 +41,7 @@ app.get('/health', (req, res) => {
 
 // Root endpoint for Vercel
 app.get('/', (req, res) => {
-  res.send('Moi Kanakku API is successfully deployed and running!');
+  res.send('Uravuu API is successfully deployed and running!');
 });
 
 // Error handling
