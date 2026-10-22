@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import { LegalModal } from '../components/LegalModal';
 import vanakkamHandsImg from '../assets/moi-vanakkam-hands.png';
+import heritageHeaderImg from '../assets/moi-heritage-header.png';
 import uravinLogo from '../assets/uravin-logo.png';
 
 const Register = () => {
