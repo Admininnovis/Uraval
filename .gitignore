@@ -1,15 +1,83 @@
-# v0 sandbox internal files
-__v0_runtime_loader.js
-__v0_devtools.tsx
-__v0_jsx-dev-runtime.ts
-.snowflake/
-.v0-trash/
-.vercel/
+# Dependencies
+node_modules/
+.pnpm-store/
+.npm/
 
-# Environment variables
-.env*.local
+# Environment & Secrets (NEVER COMMIT LIVE CREDENTIALS)
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+!**/.env.example
 
-# Common ignores
-node_modules
+# Production & Build outputs
+dist/
+**/dist/
+build/
+**/build/
+out/
 .next/
+*.tsbuildinfo
+
+# Flutter & Dart (Mobile App)
+.dart_tool/
+**/.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+**/doc/api/
+/mobile/build/
+/mobile/.dart_tool/
+/mobile/android/app/debug/
+/mobile/android/app/profile/
+/mobile/android/app/release/
+/mobile/.widget_preview/
+
+# Android Native / Capacitor / Gradle
+.gradle/
+**/.gradle/
+local.properties
+**/android/app/build/
+**/android/capacitor-cordova-android-plugins/build/
+*.apk
+*.aab
+
+# Electron
+**/electron/dist/
+**/electron/build/
+**/electron/node_modules/
+
+# IDE & Editors
+.idea/
+**/.idea/
+*.iml
+**/*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+
+# Temporary & Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tmp
+*.bak
+css_output.txt
+css_test*.txt
+
+# OS Generated
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

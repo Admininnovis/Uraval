@@ -21,7 +21,6 @@ router.post(
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('village').trim().notEmpty().withMessage('Village is required'),
-    body('mobile').optional().trim(),
   ],
   createPerson
 );
@@ -37,7 +36,6 @@ router.put(
   [
     body('name').optional().trim(),
     body('village').optional().trim(),
-    body('mobile').optional().trim(),
   ],
   updatePerson
 );

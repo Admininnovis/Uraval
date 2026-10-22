@@ -1,46 +1,66 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import uravinLogo from '../assets/uravin-logo.png';
 import {
-  LayoutDashboard,
+  LayoutGrid,
   BookOpen,
-  Library,
+  User,
   Settings,
-  LogOut
+  LogOut,
+  ChevronDown
 } from 'lucide-react';
 
 const TopNav = () => {
   const location = useLocation();
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const { t, language, toggleLanguage } = useLanguage();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const menuItems = [
-    { label: t('sidebar.index') || 'Dashboard', icon: LayoutDashboard, path: '/' },
-    { label: t('sidebar.eventLedger') || 'Event Ledgers', icon: Library, path: '/events' },
-    { label: t('sidebar.personalLedger') || 'Personal Ledgers', icon: BookOpen, path: '/personal-ledger' },
-    { label: t('sidebar.settings') || 'Settings', icon: Settings, path: '/settings' },
+    { label: language === 'ta' ? 'கண்ணோட்டம்' : 'Overview', icon: LayoutGrid, path: '/' },
+    { label: language === 'ta' ? 'நிகழ்வு குறிப்பேடு' : 'Event Ledger', icon: BookOpen, path: '/events' },
+    { label: language === 'ta' ? 'தனிப்பட்ட கணக்கு' : 'Personal Ledger', icon: User, path: '/personal-ledger' },
+    { label: language === 'ta' ? 'அமைப்புகள்' : 'Settings', icon: Settings, path: '/settings' },
   ];
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
+
+  const userInitial = user?.name ? user.name.trim().charAt(0).toUpperCase() : 'S';
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-ledger-paper border-b border-ledger-brown/20 shadow-[0_4px_10px_rgba(0,0,0,0.05)] font-serif">
-      <div className="absolute inset-0 opacity-30 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] pointer-events-none z-0"></div>
-      {/* Decorative top ledger line */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-ledger-red/80 z-0"></div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex justify-between items-center h-20">
+    <header className="sticky top-0 z-50 w-full bg-[#EDE5D8]/95 backdrop-blur-sm border-b border-[#DDD1BF] font-sans">
+      <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16 md:h-18">
         
         {/* Logo */}
-        <div className="flex-shrink-0 flex items-center">
-          <h1 className="text-2xl md:text-3xl font-bold text-ledger-brown font-tamil tracking-wider drop-shadow-sm">
-            {t('sidebar.titleLine1') || 'MOI'} {t('sidebar.titleLine2') || 'LEDGER'}
-          </h1>
-        </div>
+        <Link to="/" className="flex items-center gap-2.5 text-[#432C20] hover:opacity-90 transition-opacity">
+          <img
+            src={uravinLogo}
+            alt="Uravin Logo"
+            className="w-8 h-8 md:w-9 md:h-9 object-contain rounded-full border border-[#B68A3D]/50 shadow-xs"
+          />
+          <span className="font-serif font-bold text-xl md:text-2xl text-[#432C20] tracking-tight">
+            Uravin
+          </span>
+        </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex space-x-6 items-center">
+        {/* Desktop Nav Tabs */}
+        <nav className="hidden md:flex space-x-6 lg:space-x-8 items-center h-full">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -48,39 +68,67 @@ const TopNav = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center space-x-2 px-2 py-2 transition-all ${
+                className={`flex items-center gap-2 h-full transition-all text-sm font-medium relative ${
                   active 
-                    ? 'text-ledger-red underline underline-offset-[6px] decoration-[3px] decoration-ledger-red' 
-                    : 'text-ledger-ink/70 hover:text-ledger-brown'
+                    ? 'text-[#432C20] font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#B68A3D] after:rounded-t-sm' 
+                    : 'text-stone-600 hover:text-[#432C20]'
                 }`}
               >
-                <Icon size={18} className={active ? 'text-ledger-red' : 'text-ledger-ink/50'} />
-                <span className="font-bold text-sm tracking-wide">{item.label}</span>
+                <Icon size={16} className={active ? 'text-[#B68A3D]' : 'text-stone-400'} />
+                <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Actions */}
-        <div className="flex items-center space-x-2 md:space-x-4">
+        {/* Right Actions */}
+        <div className="flex items-center space-x-3 md:space-x-4">
           <button
             onClick={toggleLanguage}
-            className="hidden md:flex items-center space-x-1 md:space-x-2 px-2 py-1.5 md:px-3 md:py-2 bg-[#2A2118] text-[#D4AF37] border border-[#D4AF37]/30 rounded-lg hover:bg-[#1A140F] transition-all font-bold text-xs md:text-sm shadow-[0_4px_10px_rgba(0,0,0,0.3)] tracking-widest uppercase"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F7F3EB] hover:bg-[#FAF7F2] text-[#B68A3D] border border-[#DDD1BF] rounded-lg transition-all font-bold text-xs shadow-sm min-h-[38px]"
+            title="Toggle Language"
+            aria-label="Toggle Language"
           >
-            <span className="w-5 h-5 rounded-full bg-[#D4AF37] text-[#2A2118] flex items-center justify-center text-[10px] md:text-xs">
-              {language === 'en' ? 'த' : 'En'}
-            </span>
-            <span className="hidden sm:inline">{language === 'en' ? 'TA' : 'EN'}</span>
+            <span className="font-serif font-bold text-xs">文</span>
+            <span>{language === 'en' ? 'TA' : 'EN'}</span>
           </button>
           
-          <button
-            onClick={logout}
-            className="flex items-center space-x-1 md:space-x-2 px-3 py-1.5 md:px-4 md:py-2 bg-gradient-to-r from-ledger-red via-[#8B0000] to-ledger-red text-white shadow-[0_4px_15px_rgba(155,44,44,0.4)] hover:shadow-[0_8px_25px_rgba(155,44,44,0.6)] border border-white/10 hover:-translate-y-0.5 active:scale-95 transition-all rounded-lg font-bold text-xs md:text-sm tracking-widest uppercase"
-            title={t('sidebar.closeLedger') || 'Close Ledger'}
-          >
-            <LogOut size={16} className="text-white/80" />
-            <span className="hidden sm:inline">Close</span>
-          </button>
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-1.5 p-1 rounded-full hover:bg-[#DDD1BF]/40 transition-colors min-h-[44px] min-w-[44px] justify-center"
+              aria-label="User Account Menu"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#432C20] text-[#FAF7F0] flex items-center justify-center font-bold text-xs shadow-sm">
+                {userInitial}
+              </div>
+              <ChevronDown size={14} className="text-[#432C20]/70" />
+            </button>
+
+            {dropdownOpen && (
+              <div className="absolute right-0 mt-2 w-52 bg-[#F7F3EB] border border-[#DDD1BF] rounded-xl shadow-lg py-1.5 z-50 text-sm">
+                <div className="px-4 py-2.5 border-b border-[#DDD1BF]/60">
+                  <p className="font-bold text-[#432C20] truncate">{user?.name || 'User'}</p>
+                  <p className="text-xs text-stone-500 truncate">{user?.email || ''}</p>
+                </div>
+                <Link
+                  to="/settings"
+                  onClick={() => setDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-[#432C20] hover:bg-[#EDE5D8] transition-colors"
+                >
+                  <Settings size={16} className="text-[#B68A3D]" />
+                  <span>{t('sidebar.settings') || 'Settings'}</span>
+                </Link>
+                <button
+                  onClick={() => { setDropdownOpen(false); logout(); }}
+                  className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-[#C62828] hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={16} />
+                  <span>{t('sidebar.closeLedger') || 'Logout'}</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

@@ -1,6 +1,15 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { register, login, getCurrentUser, updateProfile, changePassword } from '../controllers/authController.js';
+import {
+  register,
+  login,
+  getCurrentUser,
+  updateProfile,
+  changePassword,
+  forgotPassword,
+  resetPassword,
+  deleteAccount,
+} from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -24,16 +33,35 @@ router.post(
   login
 );
 
+router.post(
+  '/forgot-password',
+  [
+    body('email').isEmail().withMessage('Valid email is required'),
+  ],
+  forgotPassword
+);
+
+router.post(
+  '/reset-password',
+  [
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('otp').trim().isLength({ min: 6, max: 6 }).withMessage('Valid 6-digit OTP is required'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  ],
+  resetPassword
+);
+
 router.get('/me', protect, getCurrentUser);
+
 router.put(
   '/profile',
   protect,
   [
     body('name').optional().trim(),
-    body('mobile').optional().trim(),
   ],
   updateProfile
 );
+
 router.post(
   '/change-password',
   protect,
@@ -43,5 +71,7 @@ router.post(
   ],
   changePassword
 );
+
+router.delete('/account', protect, deleteAccount);
 
 export default router;

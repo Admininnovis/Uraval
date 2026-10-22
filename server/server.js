@@ -10,6 +10,7 @@ import personRoutes from './routes/person.js';
 import eventRoutes from './routes/event.js';
 import ledgerRoutes from './routes/ledger.js';
 import reportRoutes from './routes/report.js';
+import syncRoutes from './routes/sync.js';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use('/api/people', personRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/ledger', ledgerRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/sync', syncRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

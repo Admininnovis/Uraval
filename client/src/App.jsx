@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import SyncIndicator from './components/SyncIndicator';
 
 // Auth Pages
 import Login from './pages/Login';
@@ -21,6 +22,7 @@ function App() {
     <Router>
       <LanguageProvider>
         <AuthProvider>
+          <SyncIndicator />
           <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

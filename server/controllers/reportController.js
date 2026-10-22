@@ -86,7 +86,6 @@ export const getPersonReport = async (req, res) => {
       id: person._id,
       name: person.name,
       village: person.village,
-      mobile: person.mobile,
       totalReceived: person.totalReceived,
       totalReturned: person.totalReturned,
       balance: person.balance,
@@ -132,7 +131,13 @@ export const getDashboardStats = async (req, res) => {
   try {
     const people = await Person.find({ createdBy: req.user.id });
     const events = await Event.find({ createdBy: req.user.id }).sort({ eventDate: -1 });
-    const entries = await EventEntry.find({ createdBy: req.user.id }).populate('personId', 'name').populate('eventId', 'eventName');
+    const userEventIds = events.map(ev => ev._id);
+    const entries = await EventEntry.find({
+      $or: [
+        { createdBy: req.user.id },
+        { eventId: { $in: userEventIds } }
+      ]
+    }).populate('personId', 'name').populate('eventId', 'eventName');
     const ledgerEntries = await PersonalLedger.find({ createdBy: req.user.id }).populate('personId', 'name');
 
     const totalReceived = people.reduce((sum, p) => sum + p.totalReceived, 0);
@@ -159,37 +164,53 @@ export const getDashboardStats = async (req, res) => {
 
     // Compute Active Events (Last 3)
     const activeEvents = events.slice(0, 3).map(event => {
-      const eventEntries = entries.filter(e => e.eventId?._id.toString() === event._id.toString());
-      const totalCol = eventEntries.reduce((sum, e) => sum + e.amount, 0);
+      const eventEntries = entries.filter(e => {
+        const evId = e.eventId?._id ? e.eventId._id.toString() : (e.eventId ? e.eventId.toString() : '');
+        return evId === event._id.toString();
+      });
+      const totalCol = eventEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
       return {
         _id: event._id,
         eventName: event.eventName,
+        eventType: event.eventType,
         eventDate: event.eventDate,
         totalEntries: eventEntries.length,
         currentBalance: totalCol,
-        lastTransactionDate: eventEntries.length > 0 ? Math.max(...eventEntries.map(e => e.createdAt.getTime())) : event.createdAt
+        lastTransactionDate: eventEntries.length > 0 ? Math.max(...eventEntries.map(e => new Date(e.createdAt).getTime())) : new Date(event.createdAt).getTime()
       };
     });
 
     // Compute Insights
     let mostActiveEvent = null;
     let highestCollectionEvent = null;
-    let highestReturnEvent = null; // We can base this on ledgerEntries if we want, or skip it
 
     if (events.length > 0) {
       const eventStats = events.map(event => {
-        const eventEntries = entries.filter(e => e.eventId?._id.toString() === event._id.toString());
+        const eventEntries = entries.filter(e => {
+          const evId = e.eventId?._id ? e.eventId._id.toString() : (e.eventId ? e.eventId.toString() : '');
+          return evId === event._id.toString();
+        });
+        const collection = eventEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
         return {
+          id: event._id,
           name: event.eventName,
           entries: eventEntries.length,
-          collection: eventEntries.reduce((sum, e) => sum + e.amount, 0)
+          collection
         };
       });
 
-      if (eventStats.length > 0) {
-        mostActiveEvent = eventStats.reduce((prev, current) => (prev.entries > current.entries) ? prev : current);
-        highestCollectionEvent = eventStats.reduce((prev, current) => (prev.collection > current.collection) ? prev : current);
+      const eventsWithCol = eventStats.filter(e => e.collection > 0);
+      if (eventsWithCol.length > 0) {
+        highestCollectionEvent = eventsWithCol.reduce((prev, current) => (prev.collection > current.collection) ? prev : current);
+      } else {
+        highestCollectionEvent = {
+          id: eventStats[0].id,
+          name: eventStats[0].name,
+          entries: eventStats[0].entries,
+          collection: 0
+        };
       }
+      mostActiveEvent = eventStats.reduce((prev, current) => (prev.entries > current.entries) ? prev : current);
     }
 
     // Recent activities

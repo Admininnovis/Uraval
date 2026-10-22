@@ -55,7 +55,7 @@ const CoverPage = React.forwardRef((props, ref) => {
 });
 
 const NotebookView = ({ event, person, entries, type = "event", onClose }) => {
-  const { t, language } = useLanguage();
+  const { t, language, tData } = useLanguage();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const bookRef = useRef();
 
@@ -92,12 +92,19 @@ const NotebookView = ({ event, person, entries, type = "event", onClose }) => {
           <Book className="text-[var(--primary)]" size={32} />
         </div>
         <h1 className="text-2xl md:text-4xl font-tamil font-bold text-[var(--primary)] leading-tight">
-          {type === 'event' ? event?.eventName : person?.name}
+          {type === 'event' ? tData(event?.eventName) : tData(person?.name)}
         </h1>
-        <p className="text-lg md:text-xl font-serif text-[var(--text-muted)] border-b-2 border-[var(--primary)]/20 pb-2 inline-block px-4">
-          {type === 'event'
-            ? (event?.eventDate ? new Date(event.eventDate).toLocaleDateString('en-IN', { month: 'long', day: 'numeric', year: 'numeric' }) : '')
-            : (person?.village || t('personalLedger.unknownVillage'))}
+        <p className="text-lg md:text-xl font-serif text-[var(--text-muted)] border-b-2 border-[var(--primary)]/20 pb-2 inline-flex items-center gap-2 px-4 flex-wrap justify-center">
+          <span>
+            {type === 'event'
+              ? (event?.eventDate ? new Date(event.eventDate).toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { month: 'long', day: 'numeric', year: 'numeric' }) : '')
+              : (tData(person?.village) || t('personalLedger.unknownVillage'))}
+          </span>
+          {type === 'personal' && person?.notes && (
+            <span className="text-sm font-serif italic bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 px-2.5 py-0.5 rounded-full">
+              {tData(person.notes)}
+            </span>
+          )}
         </p>
         <div className="grid grid-cols-2 gap-4 md:gap-8 pt-6 w-full">
           <div className="space-y-1 text-right">
@@ -135,7 +142,7 @@ const NotebookView = ({ event, person, entries, type = "event", onClose }) => {
         >
           <div className="flex justify-between items-end border-b-2 border-ledger-brown/20 pb-2 md:pb-4 mb-2 md:mb-4 pl-8 md:pl-12">
             <h2 className="text-xl md:text-2xl font-tamil text-ledger-brown font-bold">{t('eventLedgerDetail.entriesTitle')}</h2>
-            <span className="text-ledger-brown/60 font-serif font-bold text-sm md:text-lg">Pg. {idx + 1}</span>
+            <span className="text-ledger-brown/60 font-serif font-bold text-sm md:text-lg">{t('notebookView.pagePrefix')} {idx + 1}</span>
           </div>
 
           <div className="flex-1 space-y-1 md:space-y-2 pl-6 md:pl-8">
@@ -148,16 +155,16 @@ const NotebookView = ({ event, person, entries, type = "event", onClose }) => {
                   <div className="flex items-end gap-1.5 flex-wrap mb-0.5">
                     {type === 'event' && entry.personId?.editHistory?.map((h, i) => (
                       <span key={i} className="text-[9px] text-red-500 line-through font-tamil">
-                        {h.name}
+                        {tData(h.name)}
                       </span>
                     ))}
                     <div className="flex items-center gap-2">
-                      <p className="font-bold text-sm md:text-base text-ledger-brown font-tamil leading-none truncate">
-                        {type === 'event' ? (entry.personId?.name || t('eventLedgerDetail.unknownPerson')) : entry.description}
+                      <p className="font-bold text-sm md:text-base text-ledger-brown font-tamil leading-snug truncate">
+                        {type === 'event' ? (tData(entry.personId?.name) || t('eventLedgerDetail.unknownPerson')) : tData(entry.description)}
                       </p>
                       {entry.notes && (
                         <span className="text-[8px] md:text-[9px] font-serif text-ledger-brown/70 italic border border-ledger-brown/10 bg-ledger-brown/5 px-1.5 py-0.5 rounded-full shrink-0">
-                          {entry.notes}
+                          {tData(entry.notes)}
                         </span>
                       )}
                     </div>
@@ -165,11 +172,11 @@ const NotebookView = ({ event, person, entries, type = "event", onClose }) => {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {type === 'event' && entry.personId?.editHistory?.map((h, i) => (
                       <span key={i} className="text-[8px] text-red-400 line-through font-serif">
-                        {h.village}
+                        {tData(h.village)}
                       </span>
                     ))}
-                    <p className="text-[10px] md:text-xs font-serif text-ledger-brown/60 leading-none truncate">
-                      {type === 'event' ? (entry.personId?.village || t('eventLedgerDetail.unknownVillage')) : new Date(entry.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    <p className="text-[10px] md:text-xs font-serif text-ledger-brown/60 leading-normal truncate mt-0.5">
+                      {type === 'event' ? (tData(entry.personId?.village) || t('eventLedgerDetail.unknownVillage')) : new Date(entry.date).toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
                   </div>
                 </div>
@@ -177,11 +184,11 @@ const NotebookView = ({ event, person, entries, type = "event", onClose }) => {
                   <div className="flex flex-col items-end justify-center">
                     {entry.editHistory?.map((h, i) => (
                       <span key={i} className="text-[9px] md:text-[11px] font-serif text-red-500 line-through">
-                        ₹{h.amount.toLocaleString('en-IN')}
+                        ₹{h.amount.toLocaleString(language === 'ta' ? 'ta-IN' : 'en-IN')}
                       </span>
                     ))}
                     <p className={`font-bold text-base md:text-xl font-serif leading-none ${type === 'personal' && !entry.isPositive ? 'text-red-700' : 'text-green-700'}`}>
-                      {type === 'personal' && !entry.isPositive ? '-' : ''}₹{Math.abs(entry.amount || 0).toLocaleString('en-IN')}
+                      {type === 'personal' && !entry.isPositive ? '-' : ''}₹{Math.abs(entry.amount || 0).toLocaleString(language === 'ta' ? 'ta-IN' : 'en-IN')}
                     </p>
                   </div>
                 </div>
@@ -242,7 +249,9 @@ const NotebookView = ({ event, person, entries, type = "event", onClose }) => {
              <div className="w-28 h-28 bg-[#D4AF37]/5 rounded-full flex items-center justify-center border-2 border-[#D4AF37]/40 shadow-[0_0_30px_rgba(212,175,55,0.1)]">
                <Book className="text-[#D4AF37]/90" size={48} />
              </div>
-             <p className="text-[#D4AF37]/60 font-serif mt-16 tracking-[0.3em] uppercase text-sm md:text-base font-bold">Ledger Book</p>
+             <p className="text-[#D4AF37]/60 font-serif mt-16 tracking-[0.3em] uppercase text-sm md:text-base font-bold">
+               {t('notebookView.ledgerBook')}
+             </p>
              
              {/* Centered Next Button */}
              <button onClick={nextButtonClick} className="absolute bottom-12 left-1/2 transform -translate-x-1/2 p-4 bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 rounded-full text-[#D4AF37] transition-all hover:scale-110 border border-[#D4AF37]/30 shadow-lg">
@@ -264,7 +273,9 @@ const NotebookView = ({ event, person, entries, type = "event", onClose }) => {
              <div className="w-16 h-16 bg-[#D4AF37]/5 rounded-full flex items-center justify-center border border-[#D4AF37]/20 mb-6 shadow-inner">
                <Book className="text-[#D4AF37]/40" size={24} />
              </div>
-             <p className="text-[#D4AF37]/40 font-serif text-xs md:text-sm tracking-[0.2em] uppercase">Moi Kanakku</p>
+             <p className="text-[#D4AF37]/40 font-serif text-xs md:text-sm tracking-[0.2em] uppercase">
+               {t('notebookView.moiKanakku')}
+             </p>
 
              {/* Centered Prev Button */}
              <button onClick={prevButtonClick} className="absolute bottom-12 left-1/2 transform -translate-x-1/2 p-4 bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 rounded-full text-[#D4AF37] transition-all hover:scale-110 border border-[#D4AF37]/30 shadow-lg">

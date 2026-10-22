@@ -12,10 +12,6 @@ const personSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    mobile: {
-      type: String,
-      trim: true,
-    },
     notes: {
       type: String,
       trim: true,
@@ -36,10 +32,17 @@ const personSchema = new mongoose.Schema(
     editHistory: [{
       name: String,
       village: String,
-      mobile: String,
       notes: String,
       updatedAt: { type: Date, default: Date.now }
     }],
+    version: {
+      type: Number,
+      default: 1,
+    },
+    deleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

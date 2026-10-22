@@ -4,30 +4,44 @@ import PersonalLedger from '../models/PersonalLedger.js';
 
 export const createPerson = async (req, res) => {
   try {
-    const { name, village, mobile, notes } = req.body;
+    const { name, village, notes } = req.body;
 
     // Check if person already exists (auto-interconnect entries for same person)
     const trimmedName = name.trim().toUpperCase();
     const trimmedVillage = village ? village.trim().toUpperCase() : '';
+    const trimmedNotes = notes ? notes.trim() : '';
 
-    let existingPerson = await Person.findOne({
-      name: { $regex: new RegExp(`^${trimmedName}$`, 'i') },
-      village: { $regex: new RegExp(`^${trimmedVillage}$`, 'i') },
+    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    let query = {
+      name: { $regex: new RegExp(`^${escapeRegex(trimmedName)}$`, 'i') },
+      village: { $regex: new RegExp(`^${escapeRegex(trimmedVillage)}$`, 'i') },
       createdBy: req.user.id
-    });
+    };
+
+    if (trimmedNotes) {
+      query.notes = { $regex: new RegExp(`^${escapeRegex(trimmedNotes)}$`, 'i') };
+    } else {
+      query.$or = [
+        { notes: { $exists: false } },
+        { notes: '' },
+        { notes: null }
+      ];
+    }
+
+    let existingPerson = await Person.findOne(query);
 
     if (existingPerson) {
       if (req.body.autoLink || req.query.autoLink) {
         return res.status(200).json({ message: 'Person retrieved', person: existingPerson });
       } else {
-        return res.status(409).json({ message: 'A person with this exact Name and Village already exists.' });
+        return res.status(409).json({ message: 'A person with this exact Name, Village and Note already exists.' });
       }
     }
 
     let person = new Person({
       name: trimmedName,
       village: trimmedVillage,
-      mobile,
       notes,
       createdBy: req.user.id,
     });
@@ -44,16 +58,19 @@ export const getPeople = async (req, res) => {
     const { search, village, page = 1, limit = 10 } = req.query;
     let query = { createdBy: req.user.id };
 
+    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     if (search) {
+      const escaped = escapeRegex(search.trim());
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { village: { $regex: search, $options: 'i' } },
-        { mobile: { $regex: search, $options: 'i' } },
+        { name: { $regex: escaped, $options: 'i' } },
+        { village: { $regex: escaped, $options: 'i' } },
+        { notes: { $regex: escaped, $options: 'i' } },
       ];
     }
 
-    if (village) {
-      query.village = { $regex: village, $options: 'i' };
+    if (village && village !== 'All') {
+      query.village = { $regex: `^${escapeRegex(village.trim())}$`, $options: 'i' };
     }
 
     const people = await Person.find(query)
@@ -113,16 +130,15 @@ export const updatePerson = async (req, res) => {
       return res.status(404).json({ message: 'Person not found' });
     }
 
-    const { name, village, mobile, notes } = req.body;
+    const { name, village, notes } = req.body;
     
     const uppercaseName = name ? name.trim().toUpperCase() : undefined;
     const uppercaseVillage = village !== undefined ? (village ? village.trim().toUpperCase() : '') : undefined;
 
-    if (uppercaseName && uppercaseName !== person.name || uppercaseVillage !== undefined && uppercaseVillage !== person.village || mobile && mobile !== person.mobile) {
+    if (uppercaseName && uppercaseName !== person.name || uppercaseVillage !== undefined && uppercaseVillage !== person.village) {
       person.editHistory.push({
         name: person.name,
         village: person.village,
-        mobile: person.mobile,
         notes: person.notes,
         updatedAt: new Date()
       });
@@ -130,7 +146,6 @@ export const updatePerson = async (req, res) => {
 
     if (uppercaseName) person.name = uppercaseName;
     if (uppercaseVillage !== undefined) person.village = uppercaseVillage;
-    if (mobile !== undefined) person.mobile = mobile;
     if (notes !== undefined) person.notes = notes;
 
     await person.save();
@@ -165,20 +180,19 @@ export const searchPeople = async (req, res) => {
   try {
     const { query } = req.query;
 
-    if (!query || query.length < 2) {
-      return res.json({ results: [] });
-    }
+    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped = escapeRegex(query.trim());
 
     const results = await Person.find(
       {
         createdBy: req.user.id,
         $or: [
-          { name: { $regex: query, $options: 'i' } },
-          { village: { $regex: query, $options: 'i' } },
-          { mobile: { $regex: query, $options: 'i' } },
+          { name: { $regex: escaped, $options: 'i' } },
+          { village: { $regex: escaped, $options: 'i' } },
+          { notes: { $regex: escaped, $options: 'i' } },
         ],
       },
-      { name: 1, village: 1, mobile: 1, notes: 1, totalReceived: 1, totalReturned: 1 }
+      { name: 1, village: 1, notes: 1, totalReceived: 1, totalReturned: 1 }
     ).limit(10);
 
     res.json({ results });
@@ -256,7 +270,6 @@ export const splitPerson = async (req, res) => {
       newPerson = new Person({
         name: oldPerson.name,
         village: newVillage,
-        mobile: oldPerson.mobile,
         notes: oldPerson.notes,
         createdBy: req.user.id,
       });

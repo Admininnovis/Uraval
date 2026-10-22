@@ -54,7 +54,79 @@ h4,
 h5,
 h6,
 .font-tamil {
-  font-family: 'Noto Sans Tamil', serif;
+  font-family: 'Noto Sans Tamil', 'Inter', -apple-system, sans-serif;
+}
+
+/* Tamil Typography & Overlap Prevention */
+html[lang="ta"],
+.lang-ta {
+  font-family: 'Noto Sans Tamil', 'Inter', -apple-system, sans-serif;
+}
+
+html[lang="ta"] *,
+.lang-ta *,
+.font-tamil {
+  letter-spacing: 0 !important;
+  word-spacing: normal !important;
+}
+
+.lang-ta h1,
+.lang-ta h2,
+.lang-ta h3,
+.lang-ta h4,
+.lang-ta h5,
+.lang-ta h6,
+html[lang="ta"] h1,
+html[lang="ta"] h2,
+html[lang="ta"] h3,
+html[lang="ta"] h4,
+html[lang="ta"] h5,
+html[lang="ta"] h6 {
+  line-height: 1.4 !important;
+}
+
+.lang-ta p,
+.lang-ta span,
+.lang-ta a,
+.lang-ta button,
+.lang-ta input,
+.lang-ta label,
+.lang-ta th,
+.lang-ta td,
+html[lang="ta"] p,
+html[lang="ta"] span,
+html[lang="ta"] a,
+html[lang="ta"] button,
+html[lang="ta"] input,
+html[lang="ta"] label,
+html[lang="ta"] th,
+html[lang="ta"] td {
+  line-height: 1.5 !important;
+}
+
+/* Override any compressed line-height or letter-spacing that clips or overlaps Tamil glyphs */
+.lang-ta .leading-none,
+html[lang="ta"] .leading-none {
+  line-height: 1.35 !important;
+}
+.lang-ta .leading-tight,
+html[lang="ta"] .leading-tight {
+  line-height: 1.42 !important;
+}
+.lang-ta .leading-snug,
+html[lang="ta"] .leading-snug {
+  line-height: 1.5 !important;
+}
+.lang-ta .truncate,
+html[lang="ta"] .truncate {
+  padding-bottom: 2px;
+}
+
+@media (max-width: 640px) {
+  .lang-ta {
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
 }
 
 /* Custom Moi Notebook Styles */

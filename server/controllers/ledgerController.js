@@ -45,7 +45,7 @@ export const getLedgerEntries = async (req, res) => {
     }
 
     const entries = await PersonalLedger.find(query)
-      .populate('personId', 'name village mobile')
+      .populate('personId', 'name village notes')
       .sort({ date: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import en from '../translations/en';
 import ta from '../translations/ta';
+import { translateLiveData } from '../utils/translator';
 
 export const LanguageContext = createContext();
 
@@ -12,6 +13,14 @@ export const LanguageProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem('language', language);
+    document.documentElement.lang = language;
+    if (language === 'ta') {
+      document.documentElement.classList.add('lang-ta');
+      document.body?.classList.add('lang-ta');
+    } else {
+      document.documentElement.classList.remove('lang-ta');
+      document.body?.classList.remove('lang-ta');
+    }
   }, [language]);
 
   const toggleLanguage = () => {
@@ -41,8 +50,10 @@ export const LanguageProvider = ({ children }) => {
     return dict;
   };
 
+  const tData = (text) => translateLiveData(text, language);
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t, tData }}>
       {children}
     </LanguageContext.Provider>
   );

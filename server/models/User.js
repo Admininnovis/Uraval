@@ -19,11 +19,21 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    mobile: {
+    resetPasswordOtp: {
       type: String,
-      trim: true,
+    },
+    resetPasswordExpires: {
+      type: Date,
     },
     rememberLogin: {
+      type: Boolean,
+      default: false,
+    },
+    version: {
+      type: Number,
+      default: 1,
+    },
+    deleted: {
       type: Boolean,
       default: false,
     },

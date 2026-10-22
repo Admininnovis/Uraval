@@ -13,7 +13,6 @@ const PeopleDirectory = () => {
   const [formData, setFormData] = useState({
     name: '',
     village: '',
-    mobile: '',
     notes: '',
   });
 
@@ -41,7 +40,6 @@ const PeopleDirectory = () => {
       setFormData({
         name: '',
         village: '',
-        mobile: '',
         notes: '',
       });
       setShowForm(false);
@@ -133,19 +131,6 @@ const PeopleDirectory = () => {
                     className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-900"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-amber-900 mb-2">
-                    {t('peopleDirectory.mobile')}
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.mobile}
-                    onChange={(e) =>
-                      setFormData({ ...formData, mobile: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-900"
-                  />
-                </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-amber-900 mb-2">
@@ -198,13 +183,17 @@ const PeopleDirectory = () => {
                 >
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-xl font-bold text-amber-900">
-                        {person.name}
-                      </h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-xl font-bold text-amber-900">
+                          {person.name}
+                        </h3>
+                        {person.notes && (
+                          <span className="text-xs font-serif italic text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                            {person.notes}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-amber-600">{person.village}</p>
-                      {person.mobile && (
-                        <p className="text-sm text-gray-600">{person.mobile}</p>
-                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 border-t-2 border-amber-100 pt-4">

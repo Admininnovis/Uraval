@@ -243,3 +243,68 @@ export const VanakkamHands = ({ className }) => (
     <path d="M40,85 Q50,90 60,85" strokeWidth="0.5" />
   </SvgWrapper>
 );
+
+export const WeddingRings = ({ className }) => (
+  <SvgWrapper className={className} viewBox="0 0 100 60">
+    <circle cx="36" cy="32" r="18" strokeWidth="2.5" />
+    <circle cx="64" cy="32" r="18" strokeWidth="2.5" />
+    <path d="M59,14 L64,8 L69,14 Z" strokeWidth="1.5" fill="currentColor" opacity="0.3" />
+    <path d="M61,8 L67,8" strokeWidth="1" />
+  </SvgWrapper>
+);
+
+export const BabyFootprints = ({ className }) => (
+  <SvgWrapper className={className} viewBox="0 0 80 80">
+    {/* Left foot */}
+    <ellipse cx="28" cy="48" rx="8" ry="14" transform="rotate(-10 28 48)" fill="currentColor" opacity="0.25" />
+    <ellipse cx="28" cy="48" rx="8" ry="14" transform="rotate(-10 28 48)" strokeWidth="1.5" />
+    <circle cx="21" cy="28" r="2.8" fill="currentColor" opacity="0.6" />
+    <circle cx="26" cy="25" r="2.3" fill="currentColor" opacity="0.6" />
+    <circle cx="31" cy="26" r="2" fill="currentColor" opacity="0.6" />
+    <circle cx="35" cy="29" r="1.6" fill="currentColor" opacity="0.6" />
+    <circle cx="38" cy="33" r="1.4" fill="currentColor" opacity="0.6" />
+    {/* Right foot */}
+    <ellipse cx="52" cy="42" rx="8" ry="14" transform="rotate(10 52 42)" fill="currentColor" opacity="0.25" />
+    <ellipse cx="52" cy="42" rx="8" ry="14" transform="rotate(10 52 42)" strokeWidth="1.5" />
+    <circle cx="43" cy="22" r="2.8" fill="currentColor" opacity="0.6" />
+    <circle cx="48" cy="19" r="2.3" fill="currentColor" opacity="0.6" />
+    <circle cx="53" cy="20" r="2" fill="currentColor" opacity="0.6" />
+    <circle cx="57" cy="23" r="1.6" fill="currentColor" opacity="0.6" />
+    <circle cx="60" cy="27" r="1.4" fill="currentColor" opacity="0.6" />
+  </SvgWrapper>
+);
+
+export const AscendingBarChart = ({ className }) => (
+  <SvgWrapper className={className} viewBox="0 0 100 80">
+    <rect x="15" y="55" width="12" height="20" rx="1.5" strokeWidth="1.5" fill="currentColor" opacity="0.1" />
+    <rect x="35" y="40" width="12" height="35" rx="1.5" strokeWidth="1.5" fill="currentColor" opacity="0.15" />
+    <rect x="55" y="25" width="12" height="50" rx="1.5" strokeWidth="1.5" fill="currentColor" opacity="0.2" />
+    <rect x="75" y="10" width="12" height="65" rx="1.5" strokeWidth="1.5" fill="currentColor" opacity="0.25" />
+    <path d="M8,75 L95,75" strokeWidth="1.5" />
+  </SvgWrapper>
+);
+
+export const HeritageLandscape = ({ className }) => (
+  <SvgWrapper className={className} viewBox="0 0 240 100">
+    {/* Birds */}
+    <path d="M15,22 Q20,17 25,22 Q30,17 35,22" strokeWidth="1.2" />
+    <path d="M45,15 Q49,11 53,15 Q57,11 61,15" strokeWidth="1" />
+    <path d="M30,32 Q33,29 36,32 Q39,29 42,32" strokeWidth="0.8" />
+    {/* Coconut Palms */}
+    <path d="M75,95 Q80,55 90,30" strokeWidth="1.5" />
+    <path d="M90,30 Q65,20 55,35 M90,30 Q115,20 125,35 M90,30 Q90,5 90,0 M90,30 Q70,35 65,50 M90,30 Q110,35 115,50" strokeWidth="1.2" />
+    <path d="M225,95 Q220,55 210,30" strokeWidth="1.5" />
+    <path d="M210,30 Q185,20 175,35 M210,30 Q235,20 240,35 M210,30 Q210,5 210,0" strokeWidth="1.2" />
+    {/* Temple Gopuram in middle */}
+    <path d="M135,95 L185,95 L180,75 L140,75 Z" strokeWidth="1.2" />
+    <path d="M140,75 L180,75 L175,55 L145,55 Z" strokeWidth="1.2" />
+    <path d="M145,55 L175,55 L170,40 L150,40 Z" strokeWidth="1.2" />
+    <path d="M150,40 L170,40 L166,25 L154,25 Z" strokeWidth="1.2" />
+    <path d="M154,25 L160,15 L166,25" strokeWidth="1.2" />
+    {/* Kalasams on top */}
+    <line x1="160" y1="15" x2="160" y2="8" strokeWidth="1.2" />
+    <circle cx="160" cy="8" r="1.5" fill="currentColor" />
+    {/* Temple arch / doors */}
+    <path d="M153,95 L153,83 Q160,78 167,83 L167,95" strokeWidth="1" />
+  </SvgWrapper>
+);

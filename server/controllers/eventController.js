@@ -38,8 +38,20 @@ export const getEvents = async (req, res) => {
 
     const total = await Event.countDocuments(query);
 
+    const eventsWithCount = await Promise.all(
+      events.map(async (event) => {
+        const entries = await EventEntry.find({ eventId: event._id });
+        const totalCol = entries.reduce((sum, e) => sum + (e.amount || 0), 0);
+        const obj = event.toObject();
+        obj.totalEntries = entries.length;
+        obj.entryCount = entries.length;
+        obj.totalCollection = totalCol;
+        return obj;
+      })
+    );
+
     res.json({
-      events,
+      events: eventsWithCount,
       total,
       pages: Math.ceil(total / limit),
       currentPage: page,
@@ -61,13 +73,18 @@ export const getEventById = async (req, res) => {
     }
 
     const entries = await EventEntry.find({ eventId: event._id })
-      .populate('personId', 'name village mobile editHistory')
+      .populate('personId', 'name village notes editHistory')
       .sort({ createdAt: -1 });
 
     const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
 
+    const eventObj = event.toObject();
+    eventObj.totalEntries = entries.length;
+    eventObj.entryCount = entries.length;
+    eventObj.totalCollection = total;
+
     res.json({
-      event,
+      event: eventObj,
       entries,
       stats: {
         totalEntries: entries.length,

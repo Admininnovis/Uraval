@@ -9,7 +9,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { BananaTree, TempleGopuram, KolamPattern, CornerMark, PalmLeafManuscript } from '../components/Illustrations';
 
 const PersonalLedgerDetail = () => {
-  const { t, language } = useLanguage();
+  const { t, language, tData } = useLanguage();
   const { id } = useParams();
   const [person, setPerson] = useState(null);
   const [events, setEvents] = useState([]);
@@ -27,10 +27,58 @@ const PersonalLedgerDetail = () => {
   const [expandedHistoryId, setExpandedHistoryId] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  // Refs for fast data entry
+  // Focus Refs & Touch drag
   const eventNameRef = useRef(null);
   const dateRef = useRef(null);
   const amountRef = useRef(null);
+  const isSelectingEventRef = useRef(false);
+  const touchStartYRef = useRef(null);
+
+  // Event Autocomplete State
+  const [availableEvents, setAvailableEvents] = useState([]);
+  const [eventSuggestions, setEventSuggestions] = useState([]);
+  const [showEventSuggestions, setShowEventSuggestions] = useState(false);
+
+  const handleSheetTouchStart = (e) => {
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleSheetTouchEnd = (e) => {
+    if (touchStartYRef.current !== null) {
+      const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+      if (deltaY > 35) {
+        setIsFormOpen(false); // Dragged down -> close
+      } else if (deltaY < -35) {
+        setIsFormOpen(true); // Dragged up -> open
+      }
+      touchStartYRef.current = null;
+    }
+  };
+
+  const handleEventNameChange = (e) => {
+    const val = e.target.value;
+    setEventName(val);
+    if (val.trim().length > 0) {
+      const filtered = availableEvents.filter(ev => 
+        (ev.eventName || '').toLowerCase().includes(val.toLowerCase())
+      );
+      setEventSuggestions(filtered);
+      setShowEventSuggestions(filtered.length > 0);
+    } else {
+      setEventSuggestions(availableEvents.slice(0, 6));
+      setShowEventSuggestions(availableEvents.length > 0);
+    }
+  };
+
+  const handleSelectEvent = (ev) => {
+    isSelectingEventRef.current = false;
+    setEventName(ev.eventName);
+    if (ev.eventDate) {
+      setDate(new Date(ev.eventDate).toISOString().split('T')[0]);
+    }
+    setShowEventSuggestions(false);
+    setTimeout(() => dateRef.current?.focus(), 50);
+  };
 
   useEffect(() => {
     fetchPersonDetails();
@@ -43,6 +91,16 @@ const PersonalLedgerDetail = () => {
       setEvents(response.data.eventEntries);
       setPersonalLedgers(response.data.personalLedgers);
       setCurrentPage(1);
+
+      // Fetch user's events for autocomplete suggestions
+      try {
+        const evRes = await api.get('/events');
+        if (evRes.data?.events) {
+          setAvailableEvents(evRes.data.events);
+        }
+      } catch (err) {
+        // ignore
+      }
     } catch (error) {
       console.error('Error fetching person details:', error);
     } finally {
@@ -122,7 +180,7 @@ const PersonalLedgerDetail = () => {
   };
 
   const handleSplitTransaction = async (item) => {
-    if (!window.confirm(t('personalLedgerDetail.confirmSplit') || 'Are you sure you want to separate this transaction into a new person with the same name?')) return;
+    if (!window.confirm(t('personalLedgerDetail.confirmSplit'))) return;
     
     try {
       await api.post(`/people/${id}/split`, {
@@ -132,7 +190,7 @@ const PersonalLedgerDetail = () => {
       fetchPersonDetails();
     } catch (error) {
       console.error('Error splitting transaction:', error);
-      alert(error.response?.data?.message || 'Failed to split transaction');
+      alert(error.response?.data?.message || t('personalLedgerDetail.splitFailed'));
     }
   };
 
@@ -208,18 +266,20 @@ const PersonalLedgerDetail = () => {
                   <User className="text-[#D4AF37]" size={24} />
                 </div>
                 <div>
-                  <h1 className="text-xl md:text-3xl font-bold text-ledger-ink font-tamil tracking-wide drop-shadow-sm leading-tight">
-                    {person.name}
-                  </h1>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-ledger-brown/70 bg-ledger-brown/5 px-2 py-0.5 rounded-full">
-                      {person.village || t('personalLedger.unknownVillage')}
-                    </span>
-                    {person.mobile && (
-                      <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-ledger-brown/70 bg-ledger-brown/5 px-2 py-0.5 rounded-full">
-                        {person.mobile}
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h1 className="text-xl md:text-3xl font-bold text-ledger-ink font-tamil tracking-wide drop-shadow-sm leading-tight">
+                      {tData(person.name)}
+                    </h1>
+                    {person.notes && (
+                      <span className="text-[11px] md:text-xs font-serif italic text-ledger-brown bg-[#D4AF37]/20 border border-[#D4AF37]/40 px-2.5 py-0.5 rounded-full font-medium shadow-sm">
+                        {tData(person.notes)}
                       </span>
                     )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-ledger-brown/70 bg-ledger-brown/5 px-2 py-0.5 rounded-full">
+                      {tData(person.village) || t('personalLedger.unknownVillage')}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -234,7 +294,7 @@ const PersonalLedgerDetail = () => {
                     {isPositiveBalance ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
                   </div>
                   <p className={`text-2xl md:text-4xl font-serif font-bold tracking-tight ${isPositiveBalance ? 'text-ledger-green' : 'text-ledger-red'}`}>
-                    {isPositiveBalance ? '+' : '-'}₹{Math.abs(balance).toLocaleString('en-IN')}
+                    {isPositiveBalance ? '+' : '-'}₹{Math.abs(balance).toLocaleString(language === 'ta' ? 'ta-IN' : 'en-IN')}
                   </p>
                 </div>
               </div>
@@ -255,9 +315,9 @@ const PersonalLedgerDetail = () => {
           <div className="relative z-10 py-4">
             <AnimatePresence>
               {currentEntries.map((item, idx) => {
-                const month = item.date.toLocaleDateString('en-IN', { month: 'short' }).toUpperCase();
-                const day = item.date.toLocaleDateString('en-IN', { day: '2-digit' });
-                const year = item.date.toLocaleDateString('en-IN', { year: 'numeric' });
+                const month = item.date.toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { month: 'short' }).toUpperCase();
+                const day = item.date.toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { day: '2-digit' });
+                const year = item.date.toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { year: 'numeric' });
 
                 return (
                   <motion.div
@@ -286,35 +346,35 @@ const PersonalLedgerDetail = () => {
                           <div className="flex flex-wrap gap-2 items-center">
                             {/* Source Badge */}
                             <span className={`text-[9px] px-2 py-0.5 rounded uppercase tracking-widest font-bold ${item.source === 'event' ? 'bg-[#D4AF37]/20 text-[#B8860B]' : 'bg-ledger-brown/10 text-ledger-brown'}`}>
-                              {item.source === 'event' ? 'EVENT' : 'DIRECT'}
+                              {item.source === 'event' ? t('personalLedgerDetail.eventBadge') : t('personalLedgerDetail.directBadge')}
                             </span>
 
                             {/* Notes Tag */}
                             {item.notes && (
                               <span className="text-[10px] px-2 py-0.5 rounded border border-ledger-brown/20 text-ledger-brown/70 flex items-center gap-1 bg-ledger-brown/5">
-                                <Tag size={10} /> {item.notes}
+                                <Tag size={10} /> {tData(item.notes)}
                               </span>
                             )}
                           </div>
 
                           {/* Amount */}
                           <div className={`px-2 py-1 font-bold font-serif text-sm md:text-lg ${item.isPositive ? 'text-ledger-green' : 'text-ledger-red'}`}>
-                            {item.isPositive ? '+' : '-'} ₹{Math.abs(item.amount).toLocaleString('en-IN')}
+                            {item.isPositive ? '+' : '-'} ₹{Math.abs(item.amount).toLocaleString(language === 'ta' ? 'ta-IN' : 'en-IN')}
                           </div>
                         </div>
 
                         <div className="flex justify-between items-end mt-2">
-                          <h3 className="font-tamil font-bold text-base md:text-xl text-ledger-ink flex-1">{item.description}</h3>
+                          <h3 className="font-tamil font-bold text-base md:text-xl text-ledger-ink flex-1">{tData(item.description)}</h3>
 
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity -mb-1 -mr-1">
                             {/* Split Transaction Button */}
-                            <button onClick={() => handleSplitTransaction(item)} title="Separate to New Person" className="p-2 md:p-2.5 text-ledger-brown hover:bg-ledger-brown/10 rounded-full transition-all">
+                            <button onClick={() => handleSplitTransaction(item)} title={t('personalLedgerDetail.separateToNewPerson')} className="p-2 md:p-2.5 text-ledger-brown hover:bg-ledger-brown/10 rounded-full transition-all">
                               <Split size={14} />
                             </button>
 
                             {/* Hover Edit Button */}
                             {item.source === 'personal' && (
-                              <button onClick={() => handleEditClick(item)} title="Edit Entry" className="p-2 md:p-2.5 text-ledger-brown hover:bg-ledger-brown/10 rounded-full transition-all">
+                              <button onClick={() => handleEditClick(item)} title={t('personalLedgerDetail.editEntryTooltip')} className="p-2 md:p-2.5 text-ledger-brown hover:bg-ledger-brown/10 rounded-full transition-all">
                                 <Edit2 size={14} />
                               </button>
                             )}
@@ -326,7 +386,7 @@ const PersonalLedgerDetail = () => {
                           <div className="mt-4 pt-3 border-t border-ledger-brown/10">
                             <button onClick={() => toggleHistory(item._id)} className="flex items-center gap-1 text-[10px] text-ledger-brown/50 hover:text-ledger-brown transition-colors uppercase font-bold tracking-widest group/btn">
                               <History size={12} className="group-hover/btn:rotate-[-45deg] transition-transform" />
-                              View History
+                              {t('personalLedgerDetail.viewHistory')}
                               {expandedHistoryId === item._id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                             </button>
 
@@ -341,8 +401,8 @@ const PersonalLedgerDetail = () => {
                                   <div className="mt-3 space-y-2 bg-ledger-brown/5 p-3 rounded border border-ledger-brown/10 text-xs font-serif text-ledger-red/80 line-through decoration-1">
                                     {item.editHistory.map((h, i) => (
                                       <div key={i} className="flex justify-between items-center bg-ledger-paper p-1.5 rounded">
-                                        <span className="font-tamil opacity-70">{h.eventName}</span>
-                                        <span className="font-bold">{h.amount > 0 ? '+' : '-'}₹{Math.abs(h.amount).toLocaleString('en-IN')}</span>
+                                        <span className="font-tamil opacity-70">{tData(h.eventName)}</span>
+                                        <span className="font-bold">{h.amount > 0 ? '+' : '-'}₹{Math.abs(h.amount).toLocaleString(language === 'ta' ? 'ta-IN' : 'en-IN')}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -373,17 +433,17 @@ const PersonalLedgerDetail = () => {
                 disabled={currentPage === 1}
                 className="px-3 md:px-4 py-2 text-xs md:text-sm font-bold text-ledger-brown hover:bg-ledger-brown/10 disabled:opacity-30 rounded transition-colors flex items-center gap-1"
               >
-                <ChevronLeft size={16} /> <span className="hidden sm:inline">Previous</span>
+                <ChevronLeft size={16} /> <span className="hidden sm:inline">{t('common.previous')}</span>
               </button>
               <span className="text-[10px] md:text-xs uppercase tracking-widest font-bold text-ledger-brown/60">
-                Page {currentPage} of {Math.ceil(timeline.length / ENTRIES_PER_PAGE)}
+                {language === 'ta' ? `பக்கம் ${currentPage} / ${Math.ceil(timeline.length / ENTRIES_PER_PAGE)}` : `Page ${currentPage} of ${Math.ceil(timeline.length / ENTRIES_PER_PAGE)}`}
               </span>
               <button
                 onClick={() => setCurrentPage(p => Math.min(Math.ceil(timeline.length / ENTRIES_PER_PAGE), p + 1))}
                 disabled={currentPage === Math.ceil(timeline.length / ENTRIES_PER_PAGE)}
                 className="px-3 md:px-4 py-2 text-xs md:text-sm font-bold text-ledger-brown hover:bg-ledger-brown/10 disabled:opacity-30 rounded transition-colors flex items-center gap-1"
               >
-                <span className="hidden sm:inline">Next</span> <ChevronRight size={16} />
+                <span className="hidden sm:inline">{t('common.next')}</span> <ChevronRight size={16} />
               </button>
             </div>
           )}
@@ -399,19 +459,14 @@ const PersonalLedgerDetail = () => {
           <div className="max-w-5xl mx-auto pointer-events-auto md:p-4">
             <div className="bg-[#2A2118] text-ledger-paper md:rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.3)] border-t border-l border-r md:border-b border-[#D4AF37]/30 p-4 pt-1 md:p-6 relative overflow-visible backdrop-blur-xl bg-opacity-95 rounded-t-xl">
 
-              {/* Mobile Drag Handle / Toggle */}
+              {/* Mobile Drag Handle (Swipe down to dismiss, swipe up to open - no button) */}
               <div 
-                className="md:hidden flex flex-col items-center justify-center w-full py-3 mb-2 cursor-pointer relative z-20"
-                onClick={() => setIsFormOpen(!isFormOpen)}
+                className="md:hidden flex flex-col items-center justify-center w-full py-2.5 mb-1 cursor-grab active:cursor-grabbing relative z-20 select-none touch-none"
+                onTouchStart={handleSheetTouchStart}
+                onTouchEnd={handleSheetTouchEnd}
+                onClick={() => setIsFormOpen(prev => !prev)}
               >
-                <div className="w-12 h-1.5 bg-[#D4AF37]/40 rounded-full mb-1"></div>
-                <div className="flex items-center gap-1 text-[#D4AF37]/70 text-[10px] uppercase font-bold tracking-widest">
-                  {isFormOpen ? (
-                    <><ChevronDown size={14} /> Drop Down</>
-                  ) : (
-                    <><ChevronUp size={14} /> Add Entry</>
-                  )}
-                </div>
+                <div className="w-14 h-1.5 bg-[#D4AF37]/60 rounded-full hover:bg-[#D4AF37] transition-colors"></div>
               </div>
 
               {/* Leather Texture overlay */}
@@ -435,19 +490,76 @@ const PersonalLedgerDetail = () => {
               <form onSubmit={handleSubmitForm} className="relative z-10 flex flex-col md:flex-row gap-4 md:gap-6 items-stretch md:items-end">
                 <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
 
-                  {/* Event Name */}
-                  <div className="md:col-span-4">
+                  {/* Event Name with Touch-Safe Autocomplete */}
+                  <div className="md:col-span-4 relative">
                     <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1.5 text-[#D4AF37]/80">{t('personalLedgerDetail.eventName')}</label>
                     <input
                       ref={eventNameRef}
                       type="text"
                       required
                       value={eventName}
-                      onChange={(e) => setEventName(e.target.value)}
+                      onChange={handleEventNameChange}
                       onKeyDown={handleEventNameKeyDown}
+                      onFocus={() => {
+                        if (availableEvents.length > 0) {
+                          setEventSuggestions(
+                            eventName.trim() 
+                              ? availableEvents.filter(ev => (ev.eventName || '').toLowerCase().includes(eventName.toLowerCase()))
+                              : availableEvents.slice(0, 6)
+                          );
+                          setShowEventSuggestions(true);
+                        }
+                      }}
+                      onBlur={() => {
+                        setTimeout(() => {
+                          if (!isSelectingEventRef.current) {
+                            setShowEventSuggestions(false);
+                          }
+                        }, 250);
+                      }}
                       className="w-full bg-black/20 border border-[#D4AF37]/30 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50 rounded-lg outline-none text-base font-tamil px-3 py-2.5 transition-all text-white placeholder-white/20"
                       placeholder={t('personalLedgerDetail.eventNamePlaceholder')}
                     />
+
+                    {showEventSuggestions && eventSuggestions.length > 0 && (
+                      <div 
+                        className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#D4AF37]/40 z-50 max-h-48 overflow-y-auto custom-scrollbar rounded-md touch-pan-y"
+                        onTouchStart={(e) => { e.stopPropagation(); isSelectingEventRef.current = true; }}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        onMouseDown={() => { isSelectingEventRef.current = true; }}
+                      >
+                        {eventSuggestions.map((ev) => (
+                          <div
+                            key={ev._id}
+                            onPointerDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              isSelectingEventRef.current = true;
+                              handleSelectEvent(ev);
+                            }}
+                            onTouchEnd={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              isSelectingEventRef.current = true;
+                              handleSelectEvent(ev);
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleSelectEvent(ev);
+                            }}
+                            className="px-4 py-3 hover:bg-[#D4AF37]/20 active:bg-[#D4AF37]/30 cursor-pointer border-b border-[#2A2118]/10 last:border-0 transition-colors flex justify-between items-center select-none"
+                          >
+                            <p className="font-bold text-base font-tamil text-[#2A2118]">{tData(ev.eventName)}</p>
+                            {ev.eventDate && (
+                              <span className="text-xs text-stone-500 font-serif">
+                                {new Date(ev.eventDate).toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { month: 'short', year: 'numeric' })}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Date */}
@@ -497,10 +609,10 @@ const PersonalLedgerDetail = () => {
 
                 {/* Submit Button */}
                 <button type="submit" className={`w-full md:w-auto px-8 md:px-10 py-3 md:py-4 text-sm md:text-base font-bold uppercase tracking-[0.15em] transition-all rounded-lg flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(155,44,44,0.4)] hover:shadow-[0_8px_25px_rgba(155,44,44,0.6)] ${editingEntryId ? 'bg-white text-ledger-red hover:bg-gray-100' : 'bg-gradient-to-r from-ledger-red via-[#8B0000] to-ledger-red text-white hover:-translate-y-1 active:scale-95 border border-white/10'}`}>
-                  {editingEntryId ? 'UPDATE' : (
+                  {editingEntryId ? t('personalLedgerDetail.updateBtn') : (
                     <>
                       <Plus size={18} className="text-white/80" />
-                      ADD
+                      {t('personalLedgerDetail.addBtn')}
                     </>
                   )}
                 </button>

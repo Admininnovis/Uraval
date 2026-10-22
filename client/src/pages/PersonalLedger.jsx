@@ -15,7 +15,9 @@ const Page = React.forwardRef((props, ref) => {
 
       <div className="p-4 md:p-6 flex-1 flex flex-col relative z-10 pb-4 md:pb-6 max-h-full">
         <div className="flex justify-end items-end border-b-2 border-ledger-brown/30 pb-2 mb-2 shrink-0 mt-2">
-          <span className="text-ledger-brown/60 font-bold text-sm md:text-base">Pg. {props.number}</span>
+          <span className="text-ledger-brown/60 font-bold text-sm md:text-base">
+            {props.pagePrefix || 'Pg.'} {props.number}
+          </span>
         </div>
         <div className="flex-1 flex flex-col justify-start overflow-y-auto pr-2 custom-scrollbar">
           {props.children}
@@ -34,7 +36,9 @@ const CoverPage = React.forwardRef((props, ref) => {
         <div className="border-2 border-[#D4AF37]/40 p-8 rounded-lg bg-black/40 backdrop-blur-sm w-[80%] max-w-[400px]">
           <h1 className="text-3xl md:text-5xl font-bold text-[#D4AF37] font-serif mb-6 tracking-widest uppercase">{props.title}</h1>
           <div className="h-[2px] w-32 bg-[#D4AF37]/50 mx-auto mb-6"></div>
-          <p className="text-[#D4AF37]/80 italic text-lg md:text-xl font-serif leading-relaxed">"A record of our bonds and blessings"</p>
+          <p className="text-[#D4AF37]/80 italic text-lg md:text-xl font-serif leading-relaxed">
+            {props.quote || '"A record of our bonds and blessings"'}
+          </p>
         </div>
       </div>
     </div>
@@ -73,7 +77,7 @@ const itemVariants = {
 };
 
 const PersonalLedger = () => {
-  const { t, language } = useLanguage();
+  const { t, language, tData } = useLanguage();
   const [people, setPeople] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,10 +92,18 @@ const PersonalLedger = () => {
   const ENTRIES_PER_PAGE = 15;
   const ENTRIES_PER_SPREAD = 30;
 
-  const filteredPeople = people.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (p.village || '').toLowerCase().includes(searchVillage.toLowerCase())
-  );
+  const termLower = searchTerm.trim().toLowerCase();
+  const villageLower = searchVillage.trim().toLowerCase();
+
+  const filteredPeople = people.filter(p => {
+    const nameMatch = (p.name || '').toLowerCase().includes(termLower);
+    const villageMatch = (p.village || '').toLowerCase().includes(termLower);
+    const notesMatch = (p.notes || '').toLowerCase().includes(termLower);
+    const matchesSearch = termLower === '' || nameMatch || villageMatch || notesMatch;
+
+    const matchesVillageFilter = villageLower === '' || (p.village || '').toLowerCase().includes(villageLower);
+    return matchesSearch && matchesVillageFilter;
+  });
 
   let rawPagesRequired = Math.ceil(people.length / ENTRIES_PER_PAGE);
   if (rawPagesRequired === 0) rawPagesRequired = 1;
@@ -113,7 +125,6 @@ const PersonalLedger = () => {
   const [formData, setFormData] = useState({
     name: '',
     village: '',
-    mobile: '',
     notes: '',
   });
 
@@ -152,7 +163,7 @@ const PersonalLedger = () => {
         fetchPeople();
       } catch (error) {
         console.error('Error merging people:', error);
-        alert('Failed to merge records.');
+        alert(t('personalLedger.mergeFailed'));
       }
     }
   };
@@ -179,7 +190,7 @@ const PersonalLedger = () => {
     try {
       await api.post('/people', formData);
       setShowForm(false);
-      setFormData({ name: '', village: '', mobile: '', notes: '' });
+      setFormData({ name: '', village: '', notes: '' });
       fetchPeople();
     } catch (error) {
       console.error('Error creating person:', error);
@@ -229,11 +240,7 @@ const PersonalLedger = () => {
                         <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37]/80 mb-1">{t('personalLedger.village')}</label>
                         <input type="text" value={formData.village} onChange={(e) => setFormData({ ...formData, village: e.target.value })} className="w-full bg-[#FDFBF7] border-2 border-[#D4AF37]/20 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/20 rounded-md outline-none text-lg font-serif px-3 py-2 text-[#2A2118]" placeholder={t('personalLedger.villagePlaceholder')} />
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37]/80 mb-1">{t('personalLedger.mobile')}</label>
-                        <input type="text" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} className="w-full bg-[#FDFBF7] border-2 border-[#D4AF37]/20 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/20 rounded-md outline-none text-lg font-serif px-3 py-2 text-[#2A2118]" placeholder={t('personalLedger.mobilePlaceholder')} />
-                      </div>
-                      <div>
+                      <div className="md:col-span-2">
                         <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37]/80 mb-1">{t('personalLedger.notes')}</label>
                         <input type="text" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} className="w-full bg-[#FDFBF7] border-2 border-[#D4AF37]/20 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/20 rounded-md outline-none text-lg font-serif px-3 py-2 text-[#2A2118]" placeholder={t('personalLedger.notesPlaceholder')} />
                       </div>
@@ -260,7 +267,7 @@ const PersonalLedger = () => {
                   <div className="flex justify-between items-end mb-2 pb-2 border-b border-ledger-brown/20">
                     <h1 className="text-base md:text-xl font-bold text-ledger-brown drop-shadow-sm uppercase tracking-widest">{t('personalLedger.title')}</h1>
                     <div className="flex flex-col text-right">
-                      <span className="text-[10px] md:text-xs text-ledger-brown/70 font-bold uppercase tracking-widest">{t('personalLedger.totalPeople') === 'personalLedger.totalPeople' ? 'Total People' : t('personalLedger.totalPeople')}</span>
+                      <span className="text-[10px] md:text-xs text-ledger-brown/70 font-bold uppercase tracking-widest">{t('personalLedger.totalPeople')}</span>
                       <span className="text-sm md:text-lg font-bold text-ledger-ink leading-none">{people.length}</span>
                     </div>
                   </div>
@@ -282,7 +289,7 @@ const PersonalLedger = () => {
                     <div className="flex flex-col text-left">
                       <span className="text-[10px] md:text-xs text-ledger-brown/70 font-bold uppercase tracking-widest">{t('personalLedger.netBalance')}</span>
                       <span className={`text-base md:text-lg font-bold leading-none ${isTotalPositive ? 'text-ledger-green' : 'text-ledger-red'}`}>
-                        {isTotalPositive ? '+' : '-'}₹{Math.abs(totalBalance).toLocaleString('en-IN')}
+                        {isTotalPositive ? '+' : '-'}₹{Math.abs(totalBalance).toLocaleString(language === 'ta' ? 'ta-IN' : 'en-IN')}
                       </span>
                     </div>
                     <button
@@ -322,7 +329,7 @@ const PersonalLedger = () => {
             <button
               onClick={() => flipBookRef.current?.pageFlip()?.flipPrev()}
               className="absolute left-0 md:-left-12 bottom-2 md:bottom-4 z-50 p-2 md:p-4 rounded-full bg-transparent text-ledger-brown/50 hover:text-ledger-brown transition-all hover:scale-110"
-              aria-label="Previous Page"
+              aria-label={t('common.previous')}
             >
               <ChevronLeft size={32} className="md:w-12 md:h-12" />
             </button>
@@ -332,7 +339,7 @@ const PersonalLedger = () => {
             <button
               onClick={() => flipBookRef.current?.pageFlip()?.flipNext()}
               className="absolute right-0 md:-right-12 bottom-2 md:bottom-4 z-50 p-2 md:p-4 rounded-full bg-transparent text-ledger-brown/50 hover:text-ledger-brown transition-all hover:scale-110"
-              aria-label="Next Page"
+              aria-label={t('common.next')}
             >
               <ChevronRight size={32} className="md:w-12 md:h-12" strokeWidth={1.5} />
             </button>
@@ -355,7 +362,7 @@ const PersonalLedger = () => {
             ref={flipBookRef}
             onFlip={(e) => setCurrentPage(e.data)}
           >
-            <CoverPage title={t('personalLedger.title')} />
+            <CoverPage title={t('personalLedger.title')} quote={t('personalLedger.coverQuote')} />
             {pages.map((pageEntries, pageIndex) => {
               const isLeftPage = pageIndex % 2 === 0;
 
@@ -363,6 +370,7 @@ const PersonalLedger = () => {
                 <Page
                   key={pageIndex}
                   number={pageIndex + 1}
+                  pagePrefix={t('personalLedger.pagePrefix')}
                 >
                   {pageEntries.map((person, idx) => {
                     const balance = (person.totalReceived || 0) - (person.totalReturned || 0);
@@ -378,18 +386,23 @@ const PersonalLedger = () => {
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, person)}
                         className={`flex justify-between items-center border-b border-ledger-brown/15 py-1.5 md:py-2 group cursor-pointer hover:bg-ledger-brown/5 transition-colors rounded-sm px-1 md:px-2 -mx-1 md:-mx-2 ${dragOverId === person._id ? 'bg-ledger-brown/10 ring-1 ring-ledger-brown' : ''}`}
-                        title="Drag and drop onto another person to merge them"
+                        title={t('personalLedger.dragDropMerge')}
                       >
                         <div className="w-6 md:w-8 text-ledger-brown/50 text-[10px] md:text-xs font-bold text-right pr-2">
                           {(pageIndex * ENTRIES_PER_PAGE) + idx + 1}.
                         </div>
-                        <div className="flex-1 flex items-baseline gap-2">
-                          <p className="font-bold text-xs md:text-sm text-ledger-ink leading-none group-hover:text-ledger-red transition-colors">{person.name}</p>
-                          <p className="text-[9px] md:text-[10px] text-ledger-brown/70 leading-none truncate max-w-[80px] md:max-w-none">{person.village || t('personalLedger.unknownVillage')}</p>
+                        <div className="flex-1 flex items-baseline gap-2 flex-wrap min-w-0 pr-1">
+                          <p className="font-bold text-xs md:text-sm text-ledger-ink leading-snug group-hover:text-ledger-red transition-colors">{tData(person.name)}</p>
+                          {person.notes && (
+                            <span className="text-[8px] md:text-[9px] font-serif italic text-ledger-brown/90 bg-[#D4AF37]/15 border border-[#D4AF37]/30 px-1.5 py-0.5 rounded-full shrink-0">
+                              {tData(person.notes)}
+                            </span>
+                          )}
+                          <p className="text-[9px] md:text-[10px] text-ledger-brown/70 leading-normal truncate max-w-[80px] md:max-w-none">{tData(person.village) || t('personalLedger.unknownVillage')}</p>
                         </div>
                         <div className="w-20 md:w-28 text-right">
                           <p className={`font-bold text-sm md:text-lg tracking-tight ${isPositive ? 'text-ledger-green' : 'text-ledger-red'}`}>
-                            {isPositive ? '+' : '-'}₹{Math.abs(balance).toLocaleString('en-IN')}
+                            {isPositive ? '+' : '-'}₹{Math.abs(balance).toLocaleString(language === 'ta' ? 'ta-IN' : 'en-IN')}
                           </p>
                         </div>
                       </motion.div>

@@ -48,7 +48,7 @@ const formVariants = {
 };
 
 const EventLedger = () => {
-  const { t, language } = useLanguage();
+  const { t, language, tData } = useLanguage();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -166,7 +166,7 @@ const EventLedger = () => {
                       onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
                       required
                       className="w-full px-2 py-2 bg-transparent border-b border-ledger-brown/40 focus:border-ledger-brown outline-none transition-all font-bold text-xl text-ledger-ink font-tamil placeholder-ledger-brown/30"
-                      placeholder="e.g. Priya Wedding"
+                      placeholder={language === 'ta' ? 'உ.ம்: பிரியா திருமணம்' : 'e.g. Priya Wedding'}
                     />
                   </div>
                   <div>
@@ -202,7 +202,7 @@ const EventLedger = () => {
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                       className="w-full px-2 py-2 bg-transparent border-b border-ledger-brown/40 focus:border-ledger-brown outline-none transition-all font-bold text-lg text-ledger-ink placeholder-ledger-brown/30"
-                      placeholder="e.g. Salem"
+                      placeholder={language === 'ta' ? 'உ.ம்: சேலம்' : 'e.g. Salem'}
                     />
                   </div>
                 </div>
@@ -260,11 +260,11 @@ const EventLedger = () => {
                     </div>
                     
                     <h3 className="text-xl font-bold text-[#D4AF37] font-tamil leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mb-2 line-clamp-3 group-hover:text-[#F3E5AB] transition-colors">
-                      {event.eventName}
+                      {tData(event.eventName)}
                     </h3>
                     
                     <p className="text-[#D4AF37]/60 text-[9px] font-semibold uppercase tracking-widest mt-2 border-t border-[#D4AF37]/20 pt-2 mx-2">
-                      {new Date(event.eventDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                      {new Date(event.eventDate).toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { month: 'short', year: 'numeric' })}{event.location ? ` • ${tData(event.location)}` : ''}
                     </p>
 
                     <div className="mt-auto bg-black/40 p-2 rounded border border-white/5 group-hover:bg-black/50 transition-colors">
