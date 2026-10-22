@@ -15,18 +15,7 @@ class EventListScreen extends StatefulWidget {
 }
 
 class _EventListScreenState extends State<EventListScreen> {
-  String _selectedType = 'All';
   final TextEditingController _searchController = TextEditingController();
-
-  final List<String> _filterTypes = [
-    'All',
-    'Marriage',
-    'Ear Piercing',
-    'House Warming',
-    'Puberty Function',
-    'Birthday',
-    'Other',
-  ];
 
   @override
   void initState() {
@@ -47,15 +36,13 @@ class _EventListScreenState extends State<EventListScreen> {
     final lang = Provider.of<LanguageProvider>(context);
     final ledger = Provider.of<LedgerProvider>(context);
 
-    // Filter events locally by type and search query
+    // Filter events locally by search query
     final query = _searchController.text.trim().toLowerCase();
     final filteredEvents = ledger.events.where((e) {
-      final matchesType = _selectedType == 'All' ||
-          e.eventType.toLowerCase() == _selectedType.toLowerCase();
       final matchesQuery = query.isEmpty ||
           e.eventName.toLowerCase().contains(query) ||
           (e.location != null && e.location!.toLowerCase().contains(query));
-      return matchesType && matchesQuery;
+      return matchesQuery;
     }).toList();
 
     return Scaffold(
@@ -86,96 +73,49 @@ class _EventListScreenState extends State<EventListScreen> {
       ),
       body: Column(
         children: [
-          // Search & Filter Header
+          // Search Header
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             color: AppColors.surface,
-            child: Column(
-              children: [
-                // Search Input
-                TextField(
-                  controller: _searchController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: lang.t('search_ledger'),
-                    hintStyle: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSubtle,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      size: 20,
-                      color: AppColors.textMuted,
-                    ),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {});
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: AppColors.surfaceLight,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AppColors.border),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AppColors.border),
-                    ),
-                  ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: lang.t('search_ledger'),
+                hintStyle: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSubtle,
                 ),
-                const SizedBox(height: 8),
-
-                // Category Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: _filterTypes.map((type) {
-                      final isSelected = _selectedType == type;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: ChoiceChip(
-                          label: Text(
-                            type == 'All' ? lang.t('all') : lang.tData(type),
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: isSelected
-                                  ? FontWeight.w700
-                                  : FontWeight.normal,
-                              color: isSelected
-                                  ? AppColors.goldAccent
-                                  : AppColors.textDark,
-                            ),
-                          ),
-                          selected: isSelected,
-                          selectedColor: AppColors.primary,
-                          backgroundColor: AppColors.surfaceLight,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            side: BorderSide(
-                              color: isSelected
-                                  ? AppColors.gold
-                                  : AppColors.border,
-                            ),
-                          ),
-                          onSelected: (_) {
-                            setState(() => _selectedType = type);
-                          },
-                        ),
-                      );
-                    }).toList(),
-                  ),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  size: 20,
+                  color: AppColors.textMuted,
                 ),
-              ],
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {});
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: AppColors.surfaceLight,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+              ),
             ),
           ),
 
