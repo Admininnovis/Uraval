@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import UravinLoading from '../components/UravinLoading';
 import api from '../services/api';
 import { Book, ChevronLeft, Plus, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -331,12 +332,7 @@ const EventLedgerDetail = () => {
   if (loading) return (
     <Layout>
       <div className="flex justify-center items-center h-full min-h-[60vh]">
-        <div className="relative">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-[var(--primary)]/20 border-t-[var(--secondary)]"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-2 w-2 bg-[var(--secondary)] rounded-full"></div>
-          </div>
-        </div>
+        <UravinLoading size="lg" />
       </div>
     </Layout>
   );

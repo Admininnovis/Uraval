@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import UravinLoading from '../components/UravinLoading';
 import NotebookView from '../components/NotebookView';
 import api from '../services/api';
 import { User, ChevronLeft, ChevronRight, Edit2, X, Plus, History, ChevronDown, ChevronUp, Tag, ArrowDownLeft, ArrowUpRight, Book, Split } from 'lucide-react';
@@ -197,12 +198,7 @@ const PersonalLedgerDetail = () => {
   if (loading) return (
     <Layout>
       <div className="flex justify-center items-center h-full min-h-[60vh]">
-        <div className="relative">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-ledger-brown/20 border-t-ledger-red"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-2 w-2 bg-ledger-red rounded-full"></div>
-          </div>
-        </div>
+        <UravinLoading size="lg" />
       </div>
     </Layout>
   );

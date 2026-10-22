@@ -9,6 +9,7 @@ import 'providers/ledger_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'services/api_service.dart';
+import 'widgets/uravin_loading.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -110,34 +111,7 @@ class _SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 84,
-              height: 84,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surfaceLight,
-                border: Border.all(color: AppColors.gold, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryDark.withOpacity(0.12),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Image.asset(
-                  'assets/images/uravin-logo.png',
-                  width: 52,
-                  height: 52,
-                  errorBuilder: (_, _, _) => const Icon(
-                    Icons.menu_book,
-                    size: 38,
-                    color: AppColors.gold,
-                  ),
-                ),
-              ),
-            ),
+            const UravinLoading(size: 90),
             const SizedBox(height: 20),
             const Text(
               'Uravin',
@@ -154,15 +128,6 @@ class _SplashScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textMuted,
-              ),
-            ),
-            const SizedBox(height: 32),
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.2,
-                color: AppColors.gold,
               ),
             ),
           ],

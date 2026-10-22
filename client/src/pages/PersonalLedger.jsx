@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import UravinLoading from '../components/UravinLoading';
 import api from '../services/api';
 import { Plus, User, Search, MapPin, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -200,7 +201,7 @@ const PersonalLedger = () => {
   if (loading) return (
     <Layout noPadding>
       <div className="flex justify-center items-center min-h-[calc(100vh-80px)]">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-ledger-brown border-t-ledger-red"></div>
+        <UravinLoading size="lg" />
       </div>
     </Layout>
   );

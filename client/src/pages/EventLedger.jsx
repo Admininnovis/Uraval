@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import UravinLoading from '../components/UravinLoading';
 import api from '../services/api';
 import { Plus, Book, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -98,8 +99,8 @@ const EventLedger = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-leather-maroon border-t-[var(--secondary)]"></div>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <UravinLoading size="lg" />
         </div>
       </Layout>
     );

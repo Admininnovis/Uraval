@@ -10,6 +10,7 @@ import '../../services/ledger_service.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/fast_entry_sheet.dart';
+import '../../widgets/uravin_loading.dart';
 import '../booklet/booklet_screen.dart';
 
 class PersonDetailScreen extends StatefulWidget {
@@ -179,7 +180,7 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
           elevation: 0,
         ),
         body: const Center(
-          child: CircularProgressIndicator(color: AppColors.gold),
+          child: UravinLoading(size: 80),
         ),
       );
     }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import UravinLoading from '../components/UravinLoading';
 import api from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import { AuthContext } from '../context/AuthContext';
@@ -147,7 +148,7 @@ const Dashboard = () => {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[65vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#B68A3D]/20 border-t-[#B68A3D]"></div>
+          <UravinLoading size="lg" />
         </div>
       </Layout>
     );

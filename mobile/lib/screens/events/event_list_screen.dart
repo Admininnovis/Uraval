@@ -4,6 +4,7 @@ import '../../constants/app_colors.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/ledger_provider.dart';
 import '../../widgets/event_book_cover.dart';
+import '../../widgets/uravin_loading.dart';
 import 'create_event_dialog.dart';
 import 'event_detail_screen.dart';
 
@@ -127,7 +128,7 @@ class _EventListScreenState extends State<EventListScreen> {
               onRefresh: () => ledger.fetchEvents(),
               child: ledger.isLoadingEvents && ledger.events.isEmpty
                   ? const Center(
-                      child: CircularProgressIndicator(color: AppColors.gold),
+                      child: UravinLoading(size: 80),
                     )
                   : filteredEvents.isEmpty
                       ? Center(

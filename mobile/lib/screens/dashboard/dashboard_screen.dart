@@ -7,6 +7,7 @@ import '../../providers/language_provider.dart';
 import '../../providers/ledger_provider.dart';
 import '../../widgets/event_book_cover.dart';
 import '../../widgets/fast_entry_sheet.dart';
+import '../../widgets/uravin_loading.dart';
 import '../events/create_event_dialog.dart';
 import '../events/event_detail_screen.dart';
 
@@ -328,7 +329,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const Center(
                         child: Padding(
                           padding: EdgeInsets.all(24),
-                          child: CircularProgressIndicator(color: AppColors.gold),
+                          child: UravinLoading(size: 70),
                         ),
                       ),
                     ] else if (ledger.events.isEmpty) ...[

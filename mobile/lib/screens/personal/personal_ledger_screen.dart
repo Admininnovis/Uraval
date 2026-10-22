@@ -9,6 +9,7 @@ import '../../services/ledger_service.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/real_paper_page_view.dart';
+import '../../widgets/uravin_loading.dart';
 import 'person_detail_screen.dart';
 
 class PersonalLedgerScreen extends StatefulWidget {
@@ -298,7 +299,7 @@ class _PersonalLedgerScreenState extends State<PersonalLedgerScreen> {
           Expanded(
             child: ledger.isLoadingPeople && ledger.people.isEmpty
                 ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.gold),
+                    child: UravinLoading(size: 80),
                   )
                 : _isBookView
                     ? _buildBookletView(
