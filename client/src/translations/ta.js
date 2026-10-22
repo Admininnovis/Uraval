@@ -156,7 +156,9 @@ const ta = {
     addBtn: "சேர்",
     updateBtn: "புதுப்பி",
     alreadyContributed: "இந்த நபர் ஏற்கனவே இந்த நிகழ்விற்கு மொய் செய்துள்ளார்.",
-    failedToSubmit: "பதிவை சேர்ப்பதில் தோல்வி."
+    failedToSubmit: "பதிவை சேர்ப்பதில் தோல்வி.",
+    pendingSync: "ஒத்திசைக்க வேண்டும்",
+    savedOffline: "இணையமில்லாமல் சேமிக்கப்பட்டது. இணைந்ததும் ஒத்திசைக்கப்படும்."
   },
   personalLedger: {
     mergeConfirmPart1: "நீங்கள் '",

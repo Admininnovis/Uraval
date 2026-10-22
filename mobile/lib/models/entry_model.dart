@@ -8,6 +8,7 @@ class EventEntryModel {
   final num amount;
   final String? notes;
   final DateTime createdAt;
+  final bool isOffline;
 
   EventEntryModel({
     required this.id,
@@ -19,6 +20,7 @@ class EventEntryModel {
     required this.amount,
     this.notes,
     required this.createdAt,
+    this.isOffline = false,
   });
 
   factory EventEntryModel.fromJson(Map<String, dynamic> json) {
@@ -55,6 +57,7 @@ class EventEntryModel {
       eventId: evId,
       amount: (json['amount'] as num?) ?? 0,
       notes: json['notes'],
+      isOffline: json['isOffline'] == true,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -72,6 +75,7 @@ class PersonalLedgerEntryModel {
   final DateTime date;
   final String? notes;
   final DateTime createdAt;
+  final bool isOffline;
 
   PersonalLedgerEntryModel({
     required this.id,
@@ -83,6 +87,7 @@ class PersonalLedgerEntryModel {
     required this.date,
     this.notes,
     required this.createdAt,
+    this.isOffline = false,
   });
 
   factory PersonalLedgerEntryModel.fromJson(Map<String, dynamic> json) {
@@ -112,6 +117,7 @@ class PersonalLedgerEntryModel {
           ? DateTime.tryParse(json['date'].toString()) ?? DateTime.now()
           : DateTime.now(),
       notes: json['notes'],
+      isOffline: json['isOffline'] == true,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),

@@ -122,13 +122,28 @@ const PersonalLedgerDetail = () => {
           notes,
         });
       } else {
-        await api.post('/ledger', {
+        const res = await api.post('/ledger', {
           personId: id,
           eventName,
           amount: numericAmount,
           date,
           notes,
         });
+
+        // Optimistically add to personalLedgers so user immediately sees entry even offline
+        const newLedgerItem = {
+          _id: res.data?.ledger?._id || res.data?._id || 'ledger_' + Date.now(),
+          personId: id,
+          eventName,
+          amount: numericAmount,
+          date: date || new Date().toISOString(),
+          notes,
+          isReturn: false,
+          isOffline: true,
+          createdAt: new Date().toISOString(),
+        };
+        setPersonalLedgers(prev => [newLedgerItem, ...prev.filter(l => l._id !== newLedgerItem._id)]);
+        setPerson(prev => prev ? { ...prev, totalReturned: (prev.totalReturned || 0) + numericAmount } : prev);
       }
 
       cancelEdit();
@@ -225,7 +240,8 @@ const PersonalLedgerDetail = () => {
       notes: l.notes,
       source: 'personal',
       isPositive: false, // Always false because personal ledger is only for 'I gave'
-      editHistory: l.editHistory
+      editHistory: l.editHistory,
+      isOffline: l.isOffline || l._id?.startsWith('ledger_') || l._id?.startsWith('offline_')
     }))
   ].sort((a, b) => b.date - a.date); // Sort desc
 
@@ -351,6 +367,14 @@ const PersonalLedgerDetail = () => {
                                 <Tag size={10} /> {tData(item.notes)}
                               </span>
                             )}
+
+                            {/* Offline Pending Sync Badge */}
+                            {item.isOffline && (
+                              <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded flex items-center gap-1 shrink-0 shadow-xs">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                {t('eventLedgerDetail.pendingSync')}
+                              </span>
+                            )}
                           </div>
 
                           {/* Amount */}
@@ -445,175 +469,170 @@ const PersonalLedgerDetail = () => {
           )}
         </div>
 
-        {/* Floating Entry Form - Dark Premium Leather Theme */}
+        {/* Floating Entry Form - Dashboard & Settings Ivory Gold Theme */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className={`fixed bottom-16 md:bottom-0 left-0 right-0 z-50 pointer-events-none transition-transform duration-500 ease-in-out md:translate-y-0 ${!isFormOpen ? 'translate-y-[calc(100%-3.5rem)]' : 'translate-y-0'}`}
+          className={`fixed bottom-16 md:bottom-6 left-0 right-0 z-30 flex justify-center pointer-events-none md:px-8 transition-transform duration-500 ease-in-out md:translate-y-0 ${!isFormOpen ? 'translate-y-[calc(100%-3.5rem)]' : 'translate-y-0'}`}
         >
-          <div className="max-w-5xl mx-auto pointer-events-auto md:p-4">
-            <div className="bg-[#2A2118] text-ledger-paper md:rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.3)] border-t border-l border-r md:border-b border-[#D4AF37]/30 p-4 pt-1 md:p-6 relative overflow-visible backdrop-blur-xl bg-opacity-95 rounded-t-xl">
+          <div className="pointer-events-auto w-full max-w-5xl bg-[#F7F3EB] md:rounded-2xl shadow-[0_20px_50px_rgba(67,44,32,0.22)] border-t-2 border-l border-r md:border-2 border-[#DDD1BF] p-4 pt-2.5 md:p-6 relative rounded-t-2xl overflow-hidden">
 
-              {/* Mobile Drag Handle (Swipe down to dismiss, swipe up to open - no button) */}
-              <div 
-                className="md:hidden flex flex-col items-center justify-center w-full py-2.5 mb-1 cursor-grab active:cursor-grabbing relative z-20 select-none touch-none"
-                onTouchStart={handleSheetTouchStart}
-                onTouchEnd={handleSheetTouchEnd}
-                onClick={() => setIsFormOpen(prev => !prev)}
-              >
-                <div className="w-14 h-1.5 bg-[#D4AF37]/60 rounded-full hover:bg-[#D4AF37] transition-colors"></div>
-              </div>
+            {/* Top Accent Line in Antique Gold */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#B68A3D] via-[#D4AF37] to-[#B68A3D]"></div>
 
-              {/* Leather Texture overlay */}
-              <div className="absolute inset-0 opacity-20 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] pointer-events-none rounded-t-xl md:rounded-2xl"></div>
+            {/* Mobile Drag Handle (Swipe down to dismiss, swipe up to open) */}
+            <div 
+              className="md:hidden flex flex-col items-center justify-center w-full py-2 mb-1 cursor-grab active:cursor-grabbing relative z-20 select-none touch-none"
+              onTouchStart={handleSheetTouchStart}
+              onTouchEnd={handleSheetTouchEnd}
+              onClick={() => setIsFormOpen(prev => !prev)}
+            >
+              <div className="w-14 h-1.5 bg-[#DDD1BF] rounded-full hover:bg-[#B68A3D] transition-colors"></div>
+            </div>
 
-              {/* Gold accent line */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-50"></div>
+            <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#DDD1BF] relative z-10">
+              <h3 className="text-[#8A5A1E] font-bold uppercase tracking-wider text-xs md:text-sm flex items-center gap-2">
+                {editingEntryId ? <Edit2 size={14} /> : <Plus size={14} />}
+                {editingEntryId ? t('personalLedgerDetail.editingEntry') : t('personalLedgerDetail.addDirectEntry')}
+              </h3>
+              {editingEntryId && (
+                <button onClick={cancelEdit} className="text-[#8A5A1E] hover:text-[#432C20] bg-[#EDE5D8] p-1.5 rounded-lg transition-colors">
+                  <X size={16} />
+                </button>
+              )}
+            </div>
 
-              <div className="flex justify-between items-center mb-4 relative z-10">
-                <h3 className="text-[#D4AF37] font-bold uppercase tracking-[0.2em] text-xs md:text-sm flex items-center gap-2">
-                  {editingEntryId ? <Edit2 size={14} /> : <Plus size={14} />}
-                  {editingEntryId ? t('personalLedgerDetail.editingEntry') : t('personalLedgerDetail.addDirectEntry')}
-                </h3>
-                {editingEntryId && (
-                  <button onClick={cancelEdit} className="text-[#D4AF37]/60 hover:text-[#D4AF37] bg-white/5 p-1 rounded-full transition-colors">
-                    <X size={16} />
-                  </button>
-                )}
-              </div>
+            <form onSubmit={handleSubmitForm} className="relative z-10 flex flex-col md:flex-row gap-3.5 md:gap-4 items-stretch md:items-end">
+              <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-12 gap-3.5 md:gap-4">
 
-              <form onSubmit={handleSubmitForm} className="relative z-10 flex flex-col md:flex-row gap-4 md:gap-6 items-stretch md:items-end">
-                <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
-
-                  {/* Event Name with Touch-Safe Autocomplete */}
-                  <div className="md:col-span-4 relative">
-                    <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1.5 text-[#D4AF37]/80">{t('personalLedgerDetail.eventName')}</label>
-                    <input
-                      ref={eventNameRef}
-                      type="text"
-                      required
-                      value={eventName}
-                      onChange={handleEventNameChange}
-                      onKeyDown={handleEventNameKeyDown}
-                      onFocus={() => {
-                        if (availableEvents.length > 0) {
-                          setEventSuggestions(
-                            eventName.trim() 
-                              ? availableEvents.filter(ev => (ev.eventName || '').toLowerCase().includes(eventName.toLowerCase()))
-                              : availableEvents.slice(0, 6)
-                          );
-                          setShowEventSuggestions(true);
+                {/* Event Name with Autocomplete */}
+                <div className="md:col-span-4 relative">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1 text-[#8A5A1E] font-sans">{t('personalLedgerDetail.eventName')}</label>
+                  <input
+                    ref={eventNameRef}
+                    type="text"
+                    required
+                    value={eventName}
+                    onChange={handleEventNameChange}
+                    onKeyDown={handleEventNameKeyDown}
+                    onFocus={() => {
+                      if (availableEvents.length > 0) {
+                        setEventSuggestions(
+                          eventName.trim() 
+                            ? availableEvents.filter(ev => (ev.eventName || '').toLowerCase().includes(eventName.toLowerCase()))
+                            : availableEvents.slice(0, 6)
+                        );
+                        setShowEventSuggestions(true);
+                      }
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => {
+                        if (!isSelectingEventRef.current) {
+                          setShowEventSuggestions(false);
                         }
-                      }}
-                      onBlur={() => {
-                        setTimeout(() => {
-                          if (!isSelectingEventRef.current) {
-                            setShowEventSuggestions(false);
-                          }
-                        }, 250);
-                      }}
-                      className="w-full bg-black/20 border border-[#D4AF37]/30 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50 rounded-lg outline-none text-base font-tamil px-3 py-2.5 transition-all text-white placeholder-white/20"
-                      placeholder={t('personalLedgerDetail.eventNamePlaceholder')}
-                    />
+                      }, 250);
+                    }}
+                    className="w-full bg-white border-2 border-[#DDD1BF] focus:border-[#B68A3D] focus:ring-4 focus:ring-[#B68A3D]/20 rounded-xl outline-none text-base font-bold font-tamil px-3.5 py-2.5 transition-all text-[#432C20] placeholder-stone-400 shadow-xs"
+                    placeholder={t('personalLedgerDetail.eventNamePlaceholder')}
+                  />
 
-                    {showEventSuggestions && eventSuggestions.length > 0 && (
-                      <div 
-                        className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#D4AF37]/40 z-50 max-h-48 overflow-y-auto custom-scrollbar rounded-md touch-pan-y"
-                        onTouchStart={(e) => { e.stopPropagation(); isSelectingEventRef.current = true; }}
-                        onTouchMove={(e) => e.stopPropagation()}
-                        onMouseDown={() => { isSelectingEventRef.current = true; }}
-                      >
-                        {eventSuggestions.map((ev) => (
-                          <div
-                            key={ev._id}
-                            onPointerDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              isSelectingEventRef.current = true;
-                              handleSelectEvent(ev);
-                            }}
-                            onTouchEnd={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              isSelectingEventRef.current = true;
-                              handleSelectEvent(ev);
-                            }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleSelectEvent(ev);
-                            }}
-                            className="px-4 py-3 hover:bg-[#D4AF37]/20 active:bg-[#D4AF37]/30 cursor-pointer border-b border-[#2A2118]/10 last:border-0 transition-colors flex justify-between items-center select-none"
-                          >
-                            <p className="font-bold text-base font-tamil text-[#2A2118]">{tData(ev.eventName)}</p>
-                            {ev.eventDate && (
-                              <span className="text-xs text-stone-500 font-serif">
-                                {new Date(ev.eventDate).toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { month: 'short', year: 'numeric' })}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Date */}
-                  <div className="md:col-span-2">
-                    <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1.5 text-[#D4AF37]/80">{t('personalLedgerDetail.date')}</label>
-                    <input
-                      ref={dateRef}
-                      type="date"
-                      required
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      onKeyDown={handleDateKeyDown}
-                      className="w-full bg-black/20 border border-[#D4AF37]/30 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50 rounded-lg outline-none text-sm font-serif px-3 py-2.5 transition-all text-white"
-                    />
-                  </div>
-
-                  {/* Amount */}
-                  <div className="md:col-span-3">
-                    <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1.5 text-[#D4AF37]/80">{t('personalLedgerDetail.amount')}</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#D4AF37] font-bold text-lg">₹</span>
-                      <input
-                        ref={amountRef}
-                        type="number"
-                        required
-                        min="1"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="w-full bg-black/40 border-2 border-[#D4AF37]/40 focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/50 rounded-lg outline-none text-xl font-serif font-bold px-3 py-2 pl-8 transition-all text-[#D4AF37] placeholder-[#D4AF37]/20"
-                        placeholder={t('personalLedgerDetail.amountPlaceholder')}
-                      />
+                  {showEventSuggestions && eventSuggestions.length > 0 && (
+                    <div 
+                      className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#DDD1BF] z-50 max-h-48 overflow-y-auto custom-scrollbar rounded-xl touch-pan-y"
+                      onTouchStart={(e) => { e.stopPropagation(); isSelectingEventRef.current = true; }}
+                      onTouchMove={(e) => e.stopPropagation()}
+                      onMouseDown={() => { isSelectingEventRef.current = true; }}
+                    >
+                      {eventSuggestions.map((ev) => (
+                        <div
+                          key={ev._id}
+                          onPointerDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            isSelectingEventRef.current = true;
+                            handleSelectEvent(ev);
+                          }}
+                          onTouchEnd={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            isSelectingEventRef.current = true;
+                            handleSelectEvent(ev);
+                          }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSelectEvent(ev);
+                          }}
+                          className="px-4 py-3 hover:bg-[#EDE5D8]/60 active:bg-[#EDE5D8] cursor-pointer border-b border-[#DDD1BF]/60 last:border-0 transition-colors flex justify-between items-center select-none"
+                        >
+                          <p className="font-bold text-base font-tamil text-[#432C20]">{tData(ev.eventName)}</p>
+                          {ev.eventDate && (
+                            <span className="text-xs text-stone-500 font-serif">
+                              {new Date(ev.eventDate).toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { month: 'short', year: 'numeric' })}
+                            </span>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  )}
+                </div>
 
-                  {/* Notes */}
-                  <div className="md:col-span-3">
-                    <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1.5 text-[#D4AF37]/80">{t('eventLedgerDetail.notes')}</label>
+                {/* Date */}
+                <div className="md:col-span-2">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1 text-[#8A5A1E] font-sans">{t('personalLedgerDetail.date')}</label>
+                  <input
+                    ref={dateRef}
+                    type="date"
+                    required
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    onKeyDown={handleDateKeyDown}
+                    className="w-full bg-white border-2 border-[#DDD1BF] focus:border-[#B68A3D] focus:ring-4 focus:ring-[#B68A3D]/20 rounded-xl outline-none text-sm font-serif px-3 py-2.5 transition-all text-[#432C20] shadow-xs"
+                  />
+                </div>
+
+                {/* Amount */}
+                <div className="md:col-span-3">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1 text-[#8A5A1E] font-sans">{t('personalLedgerDetail.amount')}</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1B5E20] font-bold text-lg">₹</span>
                     <input
-                      type="text"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      className="w-full bg-black/20 border border-[#D4AF37]/30 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50 rounded-lg outline-none text-sm font-serif px-3 py-2.5 transition-all text-white placeholder-white/20"
-                      placeholder={t('eventLedgerDetail.optionalNotes')}
+                      ref={amountRef}
+                      type="number"
+                      required
+                      min="1"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="w-full bg-white border-2 border-[#DDD1BF] focus:border-[#B68A3D] focus:ring-4 focus:ring-[#B68A3D]/20 rounded-xl outline-none text-xl font-serif font-bold px-3 py-2 pl-8 transition-all text-[#1B5E20] placeholder-stone-300 shadow-xs"
+                      placeholder={t('personalLedgerDetail.amountPlaceholder')}
                     />
                   </div>
                 </div>
 
-                {/* Submit Button */}
-                <button type="submit" className={`w-full md:w-auto px-8 md:px-10 py-3 md:py-4 text-sm md:text-base font-bold uppercase tracking-[0.15em] transition-all rounded-lg flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(155,44,44,0.4)] hover:shadow-[0_8px_25px_rgba(155,44,44,0.6)] ${editingEntryId ? 'bg-white text-ledger-red hover:bg-gray-100' : 'bg-gradient-to-r from-ledger-red via-[#8B0000] to-ledger-red text-white hover:-translate-y-1 active:scale-95 border border-white/10'}`}>
-                  {editingEntryId ? t('personalLedgerDetail.updateBtn') : (
-                    <>
-                      <Plus size={18} className="text-white/80" />
-                      {t('personalLedgerDetail.addBtn')}
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
+                {/* Notes */}
+                <div className="md:col-span-3">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1 text-[#8A5A1E] font-sans">{t('eventLedgerDetail.notes')}</label>
+                  <input
+                    type="text"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full bg-white border-2 border-[#DDD1BF] focus:border-[#B68A3D] focus:ring-4 focus:ring-[#B68A3D]/20 rounded-xl outline-none text-sm font-serif px-3.5 py-2.5 transition-all text-[#432C20] placeholder-stone-400 shadow-xs"
+                    placeholder={t('eventLedgerDetail.optionalNotes')}
+                  />
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button type="submit" className={`w-full md:w-auto px-8 md:px-10 py-3 text-base font-bold uppercase tracking-wider transition-all rounded-xl h-[48px] md:h-[52px] flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95 ${editingEntryId ? 'bg-white text-[#7A2E1E] border-2 border-[#7A2E1E]' : 'bg-gradient-to-r from-[#7A2E1E] to-[#9B3A27] hover:from-[#652417] hover:to-[#7A2E1E] text-white border border-[#7A2E1E]'}`}>
+                {editingEntryId ? t('personalLedgerDetail.updateBtn') : (
+                  <>
+                    <Plus size={18} className="text-amber-300" />
+                    {t('personalLedgerDetail.addBtn')}
+                  </>
+                )}
+              </button>
+            </form>
           </div>
         </motion.div>
 

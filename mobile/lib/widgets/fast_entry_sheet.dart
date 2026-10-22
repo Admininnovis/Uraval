@@ -5,6 +5,8 @@ import '../models/person_model.dart';
 import '../providers/language_provider.dart';
 import '../providers/ledger_provider.dart';
 import '../services/ledger_service.dart';
+import '../services/network_status_service.dart';
+import '../services/offline_queue_service.dart';
 import 'app_toast.dart';
 import 'custom_button.dart';
 import 'custom_text_field.dart';
@@ -161,6 +163,54 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
 
     setState(() => _isSubmitting = true);
 
+    // If device is offline, store in offline queue immediately
+    if (!NetworkStatusService.isOnline.value) {
+      try {
+        if (_isReturnMode) {
+          final eventName = _returnEventNameController.text.trim().isEmpty
+              ? 'Return Money'
+              : _returnEventNameController.text.trim();
+
+          await OfflineQueueService.queuePersonalEntry(
+            personId: _selectedPersonId,
+            name: name,
+            village: village,
+            eventName: eventName,
+            amount: amount,
+            notes: notes,
+          );
+        } else {
+          if (_selectedEventId == null || _selectedEventId!.isEmpty) {
+            throw Exception(lang.t('select_event_prompt'));
+          }
+
+          await OfflineQueueService.queueEventEntry(
+            eventId: _selectedEventId!,
+            personId: _selectedPersonId,
+            name: name,
+            village: village,
+            amount: amount,
+            notes: notes,
+          );
+        }
+
+        if (mounted) {
+          Navigator.pop(context, true);
+          AppToast.showSuccess(context, lang.t('saved_offline'));
+        }
+        return;
+      } catch (e) {
+        if (mounted) {
+          AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
+        }
+        return;
+      } finally {
+        if (mounted) {
+          setState(() => _isSubmitting = false);
+        }
+      }
+    }
+
     try {
       String personId = _selectedPersonId ?? '';
 
@@ -210,6 +260,44 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
         AppToast.showSuccess(context, lang.t('entry_added_success'));
       }
     } catch (e) {
+      final errStr = e.toString().toLowerCase();
+      if (errStr.contains('network_offline') ||
+          errStr.contains('socketexception') ||
+          errStr.contains('network error') ||
+          errStr.contains('timeout')) {
+        // Fallback: save to offline queue when unexpected network error occurs
+        try {
+          if (_isReturnMode) {
+            final eventName = _returnEventNameController.text.trim().isEmpty
+                ? 'Return Money'
+                : _returnEventNameController.text.trim();
+
+            await OfflineQueueService.queuePersonalEntry(
+              personId: _selectedPersonId,
+              name: name,
+              village: village,
+              eventName: eventName,
+              amount: amount,
+              notes: notes,
+            );
+          } else {
+            await OfflineQueueService.queueEventEntry(
+              eventId: _selectedEventId!,
+              personId: _selectedPersonId,
+              name: name,
+              village: village,
+              amount: amount,
+              notes: notes,
+            );
+          }
+          if (mounted) {
+            Navigator.pop(context, true);
+            AppToast.showSuccess(context, lang.t('saved_offline'));
+          }
+          return;
+        } catch (_) {}
+      }
+
       if (mounted) {
         AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
       }
@@ -231,104 +319,151 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
         maxHeight: MediaQuery.of(context).size.height * 0.9,
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F3EB),
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
+        border: Border.all(color: const Color(0xFFDDD1BF), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF432C20).withValues(alpha: 0.18),
+            blurRadius: 28,
+            offset: const Offset(0, -6),
+          ),
+        ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
         children: [
-          // Drag Handle (Swipe down gesture to dismiss)
-          Center(
+          // Top Golden Accent Line
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
             child: Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 8),
-              width: 48,
-              height: 5,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(10),
+              height: 4,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFFB68A3D),
+                    Color(0xFFD4AF37),
+                    Color(0xFFB68A3D),
+                  ],
+                ),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
               ),
             ),
           ),
 
-          // Header Title
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _isReturnMode
-                            ? lang.t('return_entry_title')
-                            : lang.t('quick_entry_title'),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        lang.t('fast_moi_record'),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag Handle (Swipe down gesture to dismiss)
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 6),
+                  width: 48,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDDD1BF),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                // Toggle mode button (Event Entry / Return Money)
-                SegmentedButton<bool>(
-                  segments: [
-                    ButtonSegment(
-                      value: false,
-                      label: Text(
-                        lang.t('received'),
-                        style: const TextStyle(fontSize: 11),
+              ),
+
+              // Header Title
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDE5D8),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFDDD1BF)),
+                      ),
+                      child: const Icon(
+                        Icons.edit_note,
+                        color: Color(0xFF8A5A1E),
+                        size: 20,
                       ),
                     ),
-                    ButtonSegment(
-                      value: true,
-                      label: Text(
-                        lang.t('returned'),
-                        style: const TextStyle(fontSize: 11),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _isReturnMode
+                                ? lang.t('return_entry_title')
+                                : lang.t('quick_entry_title'),
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF432C20),
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            lang.t('fast_moi_record'),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF8A5A1E),
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Toggle mode button (Event Entry / Return Money)
+                    SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment(
+                          value: false,
+                          label: Text(
+                            lang.t('received'),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        ButtonSegment(
+                          value: true,
+                          label: Text(
+                            lang.t('returned'),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                      selected: {_isReturnMode},
+                      onSelectionChanged: (set) {
+                        setState(() {
+                          _isReturnMode = set.first;
+                        });
+                      },
+                      style: ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                        backgroundColor: WidgetStateProperty.resolveWith(
+                          (states) => states.contains(WidgetState.selected)
+                              ? const Color(0xFF7A2E1E)
+                              : const Color(0xFFEDE5D8),
+                        ),
+                        foregroundColor: WidgetStateProperty.resolveWith(
+                          (states) => states.contains(WidgetState.selected)
+                              ? const Color(0xFFFAF7F2)
+                              : const Color(0xFF432C20),
+                        ),
                       ),
                     ),
                   ],
-                  selected: {_isReturnMode},
-                  onSelectionChanged: (set) {
-                    setState(() {
-                      _isReturnMode = set.first;
-                    });
-                  },
-                  style: ButtonStyle(
-                    visualDensity: VisualDensity.compact,
-                    backgroundColor: WidgetStateProperty.resolveWith(
-                      (states) => states.contains(WidgetState.selected)
-                          ? AppColors.primary
-                          : AppColors.surface,
-                    ),
-                    foregroundColor: WidgetStateProperty.resolveWith(
-                      (states) => states.contains(WidgetState.selected)
-                          ? AppColors.goldAccent
-                          : AppColors.textDark,
-                    ),
-                  ),
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          const Divider(color: AppColors.border, height: 1),
+              const Divider(color: Color(0xFFDDD1BF), height: 1),
 
           // Scrollable Form
           Flexible(
@@ -418,7 +553,7 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
                           border: Border.all(color: AppColors.gold, width: 1.2),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primaryDark.withOpacity(0.08),
+                              color: AppColors.primaryDark.withValues(alpha: 0.08),
                               blurRadius: 6,
                               offset: const Offset(0, 3),
                             ),
@@ -557,6 +692,8 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
           ),
         ],
       ),
-    );
+    ],
+  ),
+);
   }
 }

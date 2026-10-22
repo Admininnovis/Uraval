@@ -156,7 +156,9 @@ const en = {
     addBtn: "ADD",
     updateBtn: "UPDATE",
     alreadyContributed: "This person has already contributed to this event.",
-    failedToSubmit: "Failed to submit entry."
+    failedToSubmit: "Failed to submit entry.",
+    pendingSync: "Pending Sync",
+    savedOffline: "Saved offline. Will sync once connected."
   },
   personalLedger: {
     mergeConfirmPart1: "Are you sure you want to merge '",

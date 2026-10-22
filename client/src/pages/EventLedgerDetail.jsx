@@ -280,19 +280,37 @@ const EventLedgerDetail = () => {
             notes: notes,
             autoLink: true // Important to allow auto-linking without 409 error
           });
-          personId = personRes.data.person._id;
+          personId = personRes.data?.person?._id || personRes.data?._id || personRes.data?.serverId;
         }
 
         // Create ledger entry
-        await api.post(`/events/${id}/entries`, {
+        const entryRes = await api.post(`/events/${id}/entries`, {
           personId,
           amount: Number(amount),
           notes,
         });
 
+        // Optimistically add to entries state so user immediately sees the entry (even offline)
+        const savedEntry = entryRes.data?.entry || entryRes.data;
+        const newEntryObj = {
+          _id: savedEntry?._id || 'entry_' + Date.now(),
+          personId: {
+            _id: personId,
+            name: personName,
+            village: village,
+            notes: notes,
+          },
+          amount: Number(amount),
+          notes,
+          createdAt: new Date().toISOString(),
+        };
+        setEntries(prev => [newEntryObj, ...prev.filter(e => e._id !== newEntryObj._id)]);
+
         // Update the person's notes so they are saved for autocomplete
         if (personId && notes) {
-          await api.put(`/people/${personId}`, { notes: notes });
+          try {
+            await api.put(`/people/${personId}`, { notes: notes });
+          } catch (_) {}
         }
       }
 
@@ -466,6 +484,12 @@ const EventLedgerDetail = () => {
                                   {tData(entry.notes)}
                                 </span>
                               )}
+                              {(entry.syncStatus === 'pending' || entry._id?.startsWith('entry_') || entry._id?.startsWith('offline_') || entry.isOffline) && (
+                                <span className="text-[8px] md:text-[9px] font-sans font-bold uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0 shadow-xs">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                  {t('eventLedgerDetail.pendingSync')}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -544,33 +568,33 @@ const EventLedgerDetail = () => {
           </div>
         </div>
 
-        {/* Centered Floating Fast Entry Form - Premium Dark Theme */}
+        {/* Centered Floating Fast Entry Form - Dashboard & Settings Ivory Gold Theme */}
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
           className={`fixed bottom-16 md:bottom-6 left-0 right-0 z-30 flex justify-center pointer-events-none md:px-8 transition-transform duration-500 ease-in-out md:translate-y-0 ${!isFormOpen ? 'translate-y-[calc(100%-3.5rem)]' : 'translate-y-0'}`}
         >
-          <div className="pointer-events-auto w-full max-w-6xl bg-[#2A2118] md:rounded-xl shadow-[0_15px_50px_rgba(0,0,0,0.5)] border-t border-l border-r md:border-2 border-[#D4AF37]/40 p-4 pt-1 md:p-6 relative rounded-t-xl">
+          <div className="pointer-events-auto w-full max-w-6xl bg-[#F7F3EB] md:rounded-2xl shadow-[0_20px_50px_rgba(67,44,32,0.22)] border-t-2 border-l border-r md:border-2 border-[#DDD1BF] p-4 pt-2.5 md:p-6 relative rounded-t-2xl overflow-hidden">
             
-            {/* Mobile Drag Handle (Swipe down to dismiss, swipe up to open - no button) */}
+            {/* Top Accent Line in Antique Gold */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#B68A3D] via-[#D4AF37] to-[#B68A3D]"></div>
+
+            {/* Mobile Drag Handle (Swipe down to dismiss, swipe up to open) */}
             <div 
-              className="md:hidden flex flex-col items-center justify-center w-full py-2.5 mb-1 cursor-grab active:cursor-grabbing relative z-20 select-none touch-none"
+              className="md:hidden flex flex-col items-center justify-center w-full py-2 mb-1 cursor-grab active:cursor-grabbing relative z-20 select-none touch-none"
               onTouchStart={handleSheetTouchStart}
               onTouchEnd={handleSheetTouchEnd}
               onClick={() => setIsFormOpen(prev => !prev)}
             >
-              <div className="w-14 h-1.5 bg-[#D4AF37]/60 rounded-full hover:bg-[#D4AF37] transition-colors"></div>
+              <div className="w-14 h-1.5 bg-[#DDD1BF] rounded-full hover:bg-[#B68A3D] transition-colors"></div>
             </div>
-
-            {/* Subtle leather texture overlay */}
-            <div className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay rounded-t-xl md:rounded-xl" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
 
             <div className="relative z-10">
               {editingEntryId && (
-                <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#D4AF37]/20">
-                  <p className="text-sm font-bold text-[#D4AF37] flex items-center gap-2 uppercase tracking-widest"><Edit2 size={14} /> {t('eventLedgerDetail.editingEntry')}</p>
-                  <button onClick={cancelEdit} className="text-[#D4AF37] hover:text-white p-1.5 rounded transition-colors bg-white/10"><X size={16} /></button>
+                <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#DDD1BF]">
+                  <p className="text-sm font-bold text-[#8A5A1E] flex items-center gap-2 uppercase tracking-wider"><Edit2 size={14} /> {t('eventLedgerDetail.editingEntry')}</p>
+                  <button onClick={cancelEdit} className="text-[#8A5A1E] hover:text-[#432C20] p-1.5 rounded-lg transition-colors bg-[#EDE5D8]"><X size={16} /></button>
                 </div>
               )}
 
@@ -581,21 +605,21 @@ const EventLedgerDetail = () => {
                     initial={{ opacity: 0, y: -6, height: 0 }}
                     animate={{ opacity: 1, y: 0, height: 'auto' }}
                     exit={{ opacity: 0, y: -6, height: 0 }}
-                    className="mb-3 px-3.5 py-2.5 rounded-lg border-2 border-amber-400/60 bg-amber-950/70 text-amber-100 text-xs shadow-lg backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-2 overflow-hidden"
+                    className="mb-3 px-3.5 py-2.5 rounded-xl border-2 border-amber-400 bg-amber-50 text-amber-900 text-xs shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-2 overflow-hidden"
                   >
                     <div className="flex items-start sm:items-center gap-2.5">
-                      <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5 sm:mt-0 animate-bounce" />
+                      <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5 sm:mt-0 animate-bounce" />
                       <div>
-                        <span className="font-bold text-amber-300 font-tamil text-sm">
+                        <span className="font-bold text-amber-900 font-tamil text-sm">
                           "{tData(exactMatchesInCurrentLedger[0].personId?.name)}"
                         </span>
-                        <span className="text-amber-200/90 ml-1">
+                        <span className="text-amber-800 ml-1">
                           ({tData(exactMatchesInCurrentLedger[0].personId?.village) || t('eventLedgerDetail.unknownVillage')}) {t('eventLedgerDetail.exactMatchAlert')}
                         </span>
-                        <div className="text-[11px] text-amber-300/80 mt-0.5 flex flex-wrap items-center gap-2 font-serif">
+                        <div className="text-[11px] text-amber-700 mt-0.5 flex flex-wrap items-center gap-2 font-serif">
                           <span>{t('eventLedgerDetail.lastEntry')}: ₹{exactMatchesInCurrentLedger[0].amount.toLocaleString(language === 'ta' ? 'ta-IN' : 'en-IN')}</span>
                           {exactMatchesInCurrentLedger[0].notes && (
-                            <span className="italic bg-amber-400/20 px-1.5 py-0.5 rounded border border-amber-400/30">
+                            <span className="italic bg-amber-200/60 px-1.5 py-0.5 rounded border border-amber-300">
                               {t('eventLedgerDetail.notes')}: {tData(exactMatchesInCurrentLedger[0].notes)}
                             </span>
                           )}
@@ -605,16 +629,16 @@ const EventLedgerDetail = () => {
                     <div className="shrink-0 self-end sm:self-center">
                       {notes.trim() ? (
                         duplicateWithExactNote ? (
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-md bg-rose-100 text-rose-700 border border-rose-300">
                             {t('eventLedgerDetail.noteCollision')}
                           </span>
                         ) : (
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
                             <CheckCircle2 size={12} /> {t('eventLedgerDetail.noteAddedUnique')}
                           </span>
                         )
                       ) : (
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-amber-400 text-black animate-pulse font-sans">
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-md bg-amber-500 text-white animate-pulse font-sans">
                           {t('eventLedgerDetail.noteRequired')}
                         </span>
                       )}
@@ -627,18 +651,18 @@ const EventLedgerDetail = () => {
                     initial={{ opacity: 0, y: -6, height: 0 }}
                     animate={{ opacity: 1, y: 0, height: 'auto' }}
                     exit={{ opacity: 0, y: -6, height: 0 }}
-                    className="mb-3 px-3.5 py-2 rounded-lg border border-[#D4AF37]/40 bg-[#D4AF37]/15 text-[#F5E6BE] text-xs shadow-md flex items-center gap-2.5 overflow-hidden"
+                    className="mb-3 px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-xs shadow-sm flex items-center gap-2.5 overflow-hidden"
                   >
-                    <Info size={16} className="text-[#D4AF37] shrink-0" />
+                    <Info size={16} className="text-amber-700 shrink-0" />
                     <div className="flex-1 overflow-x-auto whitespace-nowrap custom-scrollbar py-0.5">
-                      <span className="font-bold text-[#D4AF37] mr-1.5">{t('eventLedgerDetail.nameExistsInLedger')}</span>
+                      <span className="font-bold text-amber-900 mr-1.5">{t('eventLedgerDetail.nameExistsInLedger')}</span>
                       {nameMatchesInCurrentLedger.map((en, idx) => (
-                        <span key={en._id} className="inline-flex items-center gap-1 mr-3 font-tamil text-[13px] text-white/90">
-                          <strong className="text-[#D4AF37]">{tData(en.personId?.name)}</strong>
-                          <span className="text-white/60 text-xs">({tData(en.personId?.village) || t('eventLedgerDetail.unknownVillage')})</span>
-                          <span className="text-emerald-400 text-xs font-serif font-bold">₹{en.amount.toLocaleString(language === 'ta' ? 'ta-IN' : 'en-IN')}</span>
-                          {en.notes && <span className="text-[10px] italic text-[#D4AF37]/80 font-serif">[{tData(en.notes)}]</span>}
-                          {idx < nameMatchesInCurrentLedger.length - 1 && <span className="text-white/30 ml-2">•</span>}
+                        <span key={en._id} className="inline-flex items-center gap-1 mr-3 font-tamil text-[13px] text-stone-800">
+                          <strong className="text-[#8A5A1E]">{tData(en.personId?.name)}</strong>
+                          <span className="text-stone-500 text-xs">({tData(en.personId?.village) || t('eventLedgerDetail.unknownVillage')})</span>
+                          <span className="text-emerald-700 text-xs font-serif font-bold">₹{en.amount.toLocaleString(language === 'ta' ? 'ta-IN' : 'en-IN')}</span>
+                          {en.notes && <span className="text-[10px] italic text-stone-500 font-serif">[{tData(en.notes)}]</span>}
+                          {idx < nameMatchesInCurrentLedger.length - 1 && <span className="text-stone-300 ml-2">•</span>}
                         </span>
                       ))}
                     </div>
@@ -646,9 +670,9 @@ const EventLedgerDetail = () => {
                 )}
               </AnimatePresence>
 
-              <form onSubmit={handleSubmitForm} className="flex flex-col md:flex-row gap-4 md:gap-5 items-stretch md:items-end">
+              <form onSubmit={handleSubmitForm} className="flex flex-col md:flex-row gap-3.5 md:gap-4 items-stretch md:items-end">
                 <div className="flex-[2] w-full relative">
-                  <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1.5 text-[#D4AF37]/80">{t('eventLedgerDetail.nameInitial')}</label>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1 text-[#8A5A1E] font-sans">{t('eventLedgerDetail.nameInitial')}</label>
                   <input
                     ref={nameRef}
                     type="text"
@@ -664,13 +688,13 @@ const EventLedgerDetail = () => {
                         }
                       }, 250);
                     }}
-                    className="w-full bg-[#FDFBF7] border-2 border-[#D4AF37]/20 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/20 rounded-md outline-none text-lg md:text-xl font-bold font-tamil px-3 py-2.5 md:py-3 transition-all placeholder-[#2A2118]/30 text-[#2A2118] shadow-inner"
+                    className="w-full bg-white border-2 border-[#DDD1BF] focus:border-[#B68A3D] focus:ring-4 focus:ring-[#B68A3D]/20 rounded-xl outline-none text-base md:text-lg font-bold font-tamil px-3.5 py-2.5 md:py-3 transition-all placeholder-stone-400 text-[#432C20] shadow-xs"
                     placeholder={t('eventLedgerDetail.namePlaceholder')}
                   />
 
                   {showSuggestions && suggestions.length > 0 && (
                     <div 
-                      className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#D4AF37]/40 z-50 max-h-48 overflow-y-auto custom-scrollbar rounded-md touch-pan-y"
+                      className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#DDD1BF] z-50 max-h-48 overflow-y-auto custom-scrollbar rounded-xl touch-pan-y"
                       onTouchStart={(e) => { e.stopPropagation(); isSelectingRef.current = true; }}
                       onTouchMove={(e) => e.stopPropagation()}
                       onMouseDown={() => { isSelectingRef.current = true; }}
@@ -697,24 +721,24 @@ const EventLedgerDetail = () => {
                               e.stopPropagation();
                               handleSelectSuggestion(person);
                             }}
-                            className="px-4 py-3 hover:bg-[#D4AF37]/20 active:bg-[#D4AF37]/30 cursor-pointer border-b border-[#2A2118]/10 last:border-0 transition-colors flex justify-between items-start select-none"
+                            className="px-4 py-3 hover:bg-[#EDE5D8]/60 active:bg-[#EDE5D8] cursor-pointer border-b border-[#DDD1BF]/60 last:border-0 transition-colors flex justify-between items-start select-none"
                           >
                             <div className="flex flex-col gap-0.5">
                               <div className="flex items-center gap-2">
-                                <p className="font-bold text-base font-tamil text-[#2A2118] leading-none">{tData(person.name)}</p>
+                                <p className="font-bold text-base font-tamil text-[#432C20] leading-none">{tData(person.name)}</p>
                                 {existingInEvent && (
-                                  <span className="text-[9px] bg-amber-500/20 text-amber-900 border border-amber-500/40 px-1.5 py-0.5 rounded font-sans font-bold">
+                                  <span className="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded font-sans font-bold">
                                     {t('eventLedgerDetail.alreadyInThisEvent')} (₹{existingInEvent.amount})
                                   </span>
                                 )}
                               </div>
                               {person.notes && (
-                                <span className="text-[10px] text-ledger-brown/80 italic font-serif leading-tight">
+                                <span className="text-[10px] text-stone-500 italic font-serif leading-tight">
                                   {tData(person.notes)}
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs font-serif text-[#2A2118]/70 mt-0.5">{tData(person.village) || t('eventLedgerDetail.unknownVillage')}</p>
+                            <p className="text-xs font-serif text-stone-500 mt-0.5">{tData(person.village) || t('eventLedgerDetail.unknownVillage')}</p>
                           </div>
                         );
                       })}
@@ -722,7 +746,7 @@ const EventLedgerDetail = () => {
                   )}
                 </div>
                 <div className="flex-[1.5] w-full relative">
-                  <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1.5 text-[#D4AF37]/80">{t('eventLedgerDetail.village')}</label>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1 text-[#8A5A1E] font-sans">{t('eventLedgerDetail.village')}</label>
                   <input
                     ref={villageRef}
                     type="text"
@@ -737,13 +761,13 @@ const EventLedgerDetail = () => {
                         }
                       }, 250);
                     }}
-                    className="w-full bg-[#FDFBF7] border-2 border-[#D4AF37]/20 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/20 rounded-md outline-none text-lg md:text-xl font-serif px-3 py-2.5 md:py-3 transition-all placeholder-[#2A2118]/30 text-[#2A2118] shadow-inner"
+                    className="w-full bg-white border-2 border-[#DDD1BF] focus:border-[#B68A3D] focus:ring-4 focus:ring-[#B68A3D]/20 rounded-xl outline-none text-base md:text-lg font-serif px-3.5 py-2.5 md:py-3 transition-all placeholder-stone-400 text-[#432C20] shadow-xs"
                     placeholder={t('eventLedgerDetail.villagePlaceholder')}
                   />
 
                   {showVillageSuggestions && villageSuggestions.length > 0 && (
                     <div 
-                      className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#D4AF37]/40 z-50 max-h-48 overflow-y-auto custom-scrollbar rounded-md touch-pan-y"
+                      className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#DDD1BF] z-50 max-h-48 overflow-y-auto custom-scrollbar rounded-xl touch-pan-y"
                       onTouchStart={(e) => { e.stopPropagation(); isSelectingRef.current = true; }}
                       onTouchMove={(e) => e.stopPropagation()}
                       onMouseDown={() => { isSelectingRef.current = true; }}
@@ -768,25 +792,25 @@ const EventLedgerDetail = () => {
                             e.stopPropagation();
                             handleSelectVillageSuggestion(v);
                           }}
-                          className="px-4 py-3 hover:bg-[#D4AF37]/20 active:bg-[#D4AF37]/30 cursor-pointer border-b border-[#2A2118]/10 last:border-0 transition-colors select-none"
+                          className="px-4 py-3 hover:bg-[#EDE5D8]/60 active:bg-[#EDE5D8] cursor-pointer border-b border-[#DDD1BF]/60 last:border-0 transition-colors select-none"
                         >
-                          <p className="font-bold text-base font-tamil text-[#2A2118]">{tData(v)}</p>
+                          <p className="font-bold text-base font-tamil text-[#432C20]">{tData(v)}</p>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
                 <div className="w-full md:w-36 shrink-0">
-                  <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1.5 text-[#D4AF37]/80">{t('eventLedgerDetail.amount')}</label>
-                  <input ref={amountRef} type="number" required value={amount} onChange={(e) => setAmount(e.target.value)} onKeyDown={handleAmountKeyDown} className="w-full bg-[#FDFBF7] border-2 border-[#D4AF37]/20 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/20 rounded-md outline-none text-xl md:text-3xl font-bold text-[#1B4332] px-3 py-2 md:py-2.5 transition-all placeholder-[#2A2118]/30 text-right shadow-inner" placeholder="₹" />
+                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1 text-[#8A5A1E] font-sans">{t('eventLedgerDetail.amount')}</label>
+                  <input ref={amountRef} type="number" required value={amount} onChange={(e) => setAmount(e.target.value)} onKeyDown={handleAmountKeyDown} className="w-full bg-white border-2 border-[#DDD1BF] focus:border-[#B68A3D] focus:ring-4 focus:ring-[#B68A3D]/20 rounded-xl outline-none text-xl md:text-2xl font-bold text-[#1B5E20] px-3.5 py-2 md:py-2.5 transition-all placeholder-stone-400 text-right shadow-xs" placeholder="₹" />
                 </div>
                 <div className="flex-[1.5] w-full">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-[#D4AF37]/80">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-[#8A5A1E] font-sans">
                       {t('eventLedgerDetail.notes')}
                     </label>
                     {isNoteRequired && (
-                      <span className={`text-[9px] font-bold ${notes.trim() ? (duplicateWithExactNote ? 'text-rose-400' : 'text-emerald-400') : 'text-amber-400 animate-pulse'}`}>
+                      <span className={`text-[9px] font-bold ${notes.trim() ? (duplicateWithExactNote ? 'text-rose-600' : 'text-emerald-700') : 'text-amber-600 animate-pulse'}`}>
                         {notes.trim() ? (duplicateWithExactNote ? t('eventLedgerDetail.duplicateNote') : t('eventLedgerDetail.differentiated')) : `* ${t('eventLedgerDetail.noteRequired')}`}
                       </span>
                     )}
@@ -796,20 +820,20 @@ const EventLedgerDetail = () => {
                     type="text"
                     value={notes}
                     onChange={handleNotesChange}
-                    className={`w-full bg-[#FDFBF7] border-2 rounded-md outline-none text-base md:text-lg font-serif px-3 py-2.5 md:py-3 transition-all placeholder-[#2A2118]/40 text-[#2A2118] shadow-inner ${
+                    className={`w-full bg-white border-2 rounded-xl outline-none text-base md:text-lg font-serif px-3.5 py-2.5 md:py-3 transition-all placeholder-stone-400 text-[#432C20] shadow-xs ${
                       isNoteRequired && !notes.trim()
-                        ? 'border-amber-400 ring-4 ring-amber-400/20'
+                        ? 'border-amber-500 ring-4 ring-amber-500/20'
                         : isNoteRequired && duplicateWithExactNote
-                        ? 'border-rose-400 ring-4 ring-rose-400/20'
-                        : 'border-[#D4AF37]/20 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/20'
+                        ? 'border-rose-500 ring-4 ring-rose-500/20'
+                        : 'border-[#DDD1BF] focus:border-[#B68A3D] focus:ring-4 focus:ring-[#B68A3D]/20'
                     }`}
                     placeholder={isNoteRequired ? t('eventLedgerDetail.noteRequiredPlaceholder') : t('eventLedgerDetail.optionalNotes')}
                   />
                 </div>
-                <button type="submit" className={`w-full md:w-auto px-8 md:px-12 py-3 md:py-4 text-base md:text-lg font-bold uppercase tracking-[0.2em] transition-all rounded-lg h-[52px] md:h-[64px] flex items-center justify-center gap-3 shadow-[0_8px_20px_rgba(155,44,44,0.3)] hover:shadow-[0_12px_25px_rgba(155,44,44,0.5)] ${editingEntryId ? 'bg-white text-ledger-red hover:bg-ledger-paper' : 'bg-gradient-to-r from-ledger-red via-[#801b1b] to-ledger-red text-white hover:scale-[1.02] active:scale-95 border border-[#c54545]/30'}`}>
+                <button type="submit" className={`w-full md:w-auto px-8 md:px-10 py-3 text-base font-bold uppercase tracking-wider transition-all rounded-xl h-[48px] md:h-[52px] flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95 ${editingEntryId ? 'bg-white text-[#7A2E1E] border-2 border-[#7A2E1E]' : 'bg-gradient-to-r from-[#7A2E1E] to-[#9B3A27] hover:from-[#652417] hover:to-[#7A2E1E] text-white border border-[#7A2E1E]'}`}>
                   {editingEntryId ? t('eventLedgerDetail.updateBtn') : (
                     <>
-                      <Plus size={20} className="text-white/80" />
+                      <Plus size={18} className="text-amber-300" />
                       {t('eventLedgerDetail.addBtn')}
                     </>
                   )}

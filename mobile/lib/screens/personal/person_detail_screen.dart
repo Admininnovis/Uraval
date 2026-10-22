@@ -7,6 +7,7 @@ import '../../models/person_model.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/ledger_provider.dart';
 import '../../services/ledger_service.dart';
+import '../../services/offline_queue_service.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/fast_entry_sheet.dart';
@@ -42,18 +43,25 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
 
   Future<void> _fetchPerson() async {
     setState(() => _isLoading = true);
+    final offlinePersonal = await OfflineQueueService.getPendingEntriesForPerson(widget.personId);
     try {
       final res = await LedgerService.getPersonById(widget.personId);
+      final serverPersonal = res['personalLedgers'] as List<PersonalLedgerEntryModel>;
       setState(() {
         _person = res['person'] as PersonModel;
         _eventEntries = res['eventEntries'] as List<EventEntryModel>;
-        _personalLedgers =
-            res['personalLedgers'] as List<PersonalLedgerEntryModel>;
+        _personalLedgers = [...offlinePersonal, ...serverPersonal];
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (offlinePersonal.isNotEmpty) {
+          _personalLedgers = [...offlinePersonal, ..._personalLedgers.where((p) => !p.isOffline)];
+        }
+      });
+      final errStr = e.toString().toLowerCase();
+      if (!errStr.contains('network_offline') && !errStr.contains('socketexception') && mounted) {
         AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
       }
     }
@@ -232,6 +240,7 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
         'amount': l.amount,
         'date': l.date,
         'notes': l.notes,
+        'isOffline': l.isOffline,
       });
     }
 
@@ -626,6 +635,31 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
                                         fontSize: 11,
                                         fontStyle: FontStyle.italic,
                                         color: AppColors.textSubtle,
+                                      ),
+                                    ),
+                                  if (item['isOffline'] == true)
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 3),
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.shade100,
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: Colors.amber.shade400),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.cloud_off, size: 10, color: Colors.amber.shade900),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            lang.t('offline_pending_sync'),
+                                            style: TextStyle(
+                                              fontSize: 9.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.amber.shade900,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                 ],

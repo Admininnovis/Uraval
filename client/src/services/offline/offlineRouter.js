@@ -16,8 +16,62 @@ export const routeOfflineRequest = async (config) => {
   try {
     switch (collection) {
       case 'events':
+        if (method === 'get' && id && !subAction) {
+          const event = await eventsRepo.table.where('serverId').equals(id).first() || await eventsRepo.table.get(Number(id)) || await eventsRepo.table.get(id);
+          const localEntries = await moiRecordsRepo.table.where('eventId').equals(id).toArray();
+          const entriesWithPerson = await Promise.all(localEntries.map(async (entry) => {
+            let person = null;
+            if (entry.personId) {
+              person = await peopleRepo.table.where('serverId').equals(entry.personId).first() || 
+                       await peopleRepo.table.get(Number(entry.personId)) || 
+                       await peopleRepo.table.get(entry.personId);
+            }
+            return {
+              ...entry,
+              _id: entry.serverId || ('offline_' + entry.localId),
+              personId: person ? { ...person, _id: person.serverId || ('offline_' + person.localId) } : { _id: entry.personId, name: entry.personName || 'Guest', village: entry.village || '' }
+            };
+          }));
+          return {
+            status: 200,
+            data: {
+              event: event ? { ...event, _id: event.serverId || ('offline_' + event.localId) } : { _id: id, eventName: 'Event', totalCollection: localEntries.reduce((s, e) => s + (Number(e.amount) || 0), 0) },
+              entries: entriesWithPerson,
+              stats: { totalEntries: localEntries.length, totalAmount: localEntries.reduce((s, e) => s + (Number(e.amount) || 0), 0) }
+            }
+          };
+        }
         return await handleResource(eventsRepo, method, id, config.data, subAction, subId);
       case 'people':
+        if (method === 'get' && id === 'search') {
+          const queryString = config.url.split('?')[1] || '';
+          const params = new URLSearchParams(queryString);
+          const query = (params.get('query') || '').toLowerCase();
+          const allGuests = await peopleRepo.table.toArray();
+          const filtered = allGuests.filter(g => 
+            (g.name && g.name.toLowerCase().includes(query)) ||
+            (g.village && g.village.toLowerCase().includes(query))
+          ).map(g => ({
+            ...g,
+            _id: g.serverId || ('offline_' + g.localId)
+          }));
+          return { status: 200, data: { results: filtered } };
+        }
+        if (method === 'get' && id && !subAction) {
+          const person = await peopleRepo.table.where('serverId').equals(id).first() || 
+                         await peopleRepo.table.get(Number(id)) || 
+                         await peopleRepo.table.get(id);
+          const localEntries = await moiRecordsRepo.table.where('personId').equals(id).toArray();
+          const localLedgers = await ledgersRepo.table.where('personId').equals(id).toArray();
+          return {
+            status: 200,
+            data: {
+              person: person ? { ...person, _id: person.serverId || ('offline_' + person.localId) } : { _id: id, name: 'Offline Person' },
+              eventEntries: localEntries,
+              personalLedgers: localLedgers,
+            }
+          };
+        }
         return await handleResource(peopleRepo, method, id, config.data, subAction, subId);
       case 'ledger':
         return await handleResource(ledgersRepo, method, id, config.data, subAction, subId);
@@ -69,7 +123,14 @@ async function handleResource(repo, method, id, data, subAction, subId) {
     }
     if (method === 'post') {
        const newRecord = await moiRecordsRepo.create({ ...parsedData, eventId: id });
-       return { status: 201, data: newRecord };
+       return { 
+         status: 201, 
+         data: {
+           ...newRecord,
+           entry: newRecord,
+           _id: newRecord.serverId || ('offline_' + newRecord.localId)
+         } 
+       };
     }
     if (method === 'put' && subId) {
        const updated = await moiRecordsRepo.update(subId, parsedData);
@@ -90,7 +151,16 @@ async function handleResource(repo, method, id, data, subAction, subId) {
   
   if (method === 'post') {
     const created = await repo.create(parsedData);
-    return { status: 201, data: created };
+    return {
+      status: 201,
+      data: {
+        ...created,
+        person: created,
+        event: created,
+        entry: created,
+        ledger: created,
+      },
+    };
   }
   
   if (method === 'put' && id) {

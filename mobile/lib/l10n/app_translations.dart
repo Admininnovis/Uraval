@@ -141,6 +141,9 @@ class AppTranslations {
     'no_internet_desc': 'Please connect to Wi-Fi or mobile data to continue',
     'connection_restored': 'Connection Restored • Back Online',
     'retry': 'Retry',
+    'saved_offline': 'Saved offline. Will sync once connected.',
+    'offline_pending_sync': 'Pending Sync',
+    'offline_synced_success': 'Offline entries synced successfully!',
   };
 
   static const Map<String, String> ta = {
@@ -285,5 +288,8 @@ class AppTranslations {
     'no_internet_desc': 'தொடர தயவுசெய்து இணைய இணைப்பில் இணையவும்',
     'connection_restored': 'இணைப்பு மீண்டும் கிடைத்தது • ஆன்லைன்',
     'retry': 'மீண்டும் முயற்சி',
+    'saved_offline': 'இணையமில்லாமல் சேமிக்கப்பட்டது. இணைந்ததும் ஒத்திசைக்கப்படும்.',
+    'offline_pending_sync': 'ஒத்திசைக்க வேண்டும்',
+    'offline_synced_success': 'பதிவுகள் வெற்றிகரமாக ஒத்திசைக்கப்பட்டன!',
   };
 }
