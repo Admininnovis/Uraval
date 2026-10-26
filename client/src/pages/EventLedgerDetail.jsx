@@ -134,14 +134,16 @@ const EventLedgerDetail = () => {
     setPersonName(value);
     setSelectedPersonId(null); // Reset if they edit
 
-    if (value.length > 1) {
+    if (value.trim().length > 0) {
       try {
-        const response = await api.get(`/people/search?query=${value}`);
+        const response = await api.get(`/people/search?query=${encodeURIComponent(value.trim())}`);
         const allResults = response.data.results || [];
         setSuggestions(allResults);
-        setShowSuggestions(true);
+        setShowSuggestions(allResults.length > 0);
       } catch (error) {
         console.error('Error fetching suggestions:', error);
+        setSuggestions([]);
+        setShowSuggestions(false);
       }
     } else {
       setSuggestions([]);
@@ -153,16 +155,17 @@ const EventLedgerDetail = () => {
     const value = e.target.value;
     setVillage(value);
 
-    if (value.length > 1) {
+    if (value.trim().length > 0) {
       try {
-        const response = await api.get(`/people/search?query=${value}`);
+        const response = await api.get(`/people/search?query=${encodeURIComponent(value.trim())}`);
         const results = response.data.results || [];
-        // Extract unique villages
         const uniqueVillages = [...new Set(results.map(p => p.village).filter(Boolean))];
         setVillageSuggestions(uniqueVillages);
-        setShowVillageSuggestions(true);
+        setShowVillageSuggestions(uniqueVillages.length > 0);
       } catch (error) {
         console.error('Error fetching village suggestions:', error);
+        setVillageSuggestions([]);
+        setShowVillageSuggestions(false);
       }
     } else {
       setVillageSuggestions([]);
@@ -280,7 +283,7 @@ const EventLedgerDetail = () => {
             notes: notes,
             autoLink: true // Important to allow auto-linking without 409 error
           });
-          personId = personRes.data?.person?._id || personRes.data?._id || personRes.data?.serverId;
+          personId = personRes.data?.person?._id || personRes.data?._id;
         }
 
         // Create ledger entry
@@ -290,21 +293,22 @@ const EventLedgerDetail = () => {
           notes,
         });
 
-        // Optimistically add to entries state so user immediately sees the entry (even offline)
+        // Add to entries state from API response
         const savedEntry = entryRes.data?.entry || entryRes.data;
-        const newEntryObj = {
-          _id: savedEntry?._id || 'entry_' + Date.now(),
-          personId: {
-            _id: personId,
-            name: personName,
-            village: village,
-            notes: notes,
-          },
-          amount: Number(amount),
-          notes,
-          createdAt: new Date().toISOString(),
-        };
-        setEntries(prev => [newEntryObj, ...prev.filter(e => e._id !== newEntryObj._id)]);
+        if (savedEntry) {
+          const newEntryObj = {
+            ...savedEntry,
+            personId: savedEntry.personId && typeof savedEntry.personId === 'object'
+              ? savedEntry.personId
+              : {
+                  _id: personId,
+                  name: personName,
+                  village: village,
+                  notes: notes,
+                },
+          };
+          setEntries(prev => [newEntryObj, ...prev.filter(e => e._id !== newEntryObj._id)]);
+        }
 
         // Update the person's notes so they are saved for autocomplete
         if (personId && notes) {
@@ -484,12 +488,7 @@ const EventLedgerDetail = () => {
                                   {tData(entry.notes)}
                                 </span>
                               )}
-                              {(entry.syncStatus === 'pending' || entry._id?.startsWith('entry_') || entry._id?.startsWith('offline_') || entry.isOffline) && (
-                                <span className="text-[8px] md:text-[9px] font-sans font-bold uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0 shadow-xs">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                  {t('eventLedgerDetail.pendingSync')}
-                                </span>
-                              )}
+
                             </div>
                           </div>
                         </div>
@@ -573,12 +572,12 @@ const EventLedgerDetail = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className={`fixed bottom-16 md:bottom-6 left-0 right-0 z-30 flex justify-center pointer-events-none md:px-8 transition-transform duration-500 ease-in-out md:translate-y-0 ${!isFormOpen ? 'translate-y-[calc(100%-3.5rem)]' : 'translate-y-0'}`}
+          className={`fixed bottom-16 md:bottom-6 left-0 right-0 z-40 flex justify-center pointer-events-none md:px-8 transition-transform duration-500 ease-in-out md:translate-y-0 ${!isFormOpen ? 'translate-y-[calc(100%-3.5rem)]' : 'translate-y-0'}`}
         >
-          <div className="pointer-events-auto w-full max-w-6xl bg-[#F7F3EB] md:rounded-2xl shadow-[0_20px_50px_rgba(67,44,32,0.22)] border-t-2 border-l border-r md:border-2 border-[#DDD1BF] p-4 pt-2.5 md:p-6 relative rounded-t-2xl overflow-hidden">
+          <div className="pointer-events-auto w-full max-w-6xl bg-[#F7F3EB] md:rounded-2xl shadow-[0_20px_50px_rgba(67,44,32,0.22)] border-t-2 border-l border-r md:border-2 border-[#DDD1BF] p-4 pt-2.5 md:p-6 relative rounded-t-2xl overflow-visible">
             
             {/* Top Accent Line in Antique Gold */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#B68A3D] via-[#D4AF37] to-[#B68A3D]"></div>
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#B68A3D] via-[#D4AF37] to-[#B68A3D] rounded-t-2xl md:rounded-t-2xl"></div>
 
             {/* Mobile Drag Handle (Swipe down to dismiss, swipe up to open) */}
             <div 
@@ -680,7 +679,13 @@ const EventLedgerDetail = () => {
                     value={personName}
                     onChange={handleNameChange}
                     onKeyDown={handleNameKeyDown}
-                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                    onFocus={() => {
+                      if (suggestions.length > 0) {
+                        setShowSuggestions(true);
+                      } else if (personName.trim()) {
+                        handleNameChange({ target: { value: personName } });
+                      }
+                    }}
                     onBlur={() => {
                       setTimeout(() => {
                         if (!isSelectingRef.current) {
@@ -694,7 +699,7 @@ const EventLedgerDetail = () => {
 
                   {showSuggestions && suggestions.length > 0 && (
                     <div 
-                      className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#DDD1BF] z-50 max-h-48 overflow-y-auto custom-scrollbar rounded-xl touch-pan-y"
+                      className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#DDD1BF] z-[100] max-h-56 overflow-y-auto custom-scrollbar rounded-xl touch-pan-y"
                       onTouchStart={(e) => { e.stopPropagation(); isSelectingRef.current = true; }}
                       onTouchMove={(e) => e.stopPropagation()}
                       onMouseDown={() => { isSelectingRef.current = true; }}
@@ -753,7 +758,13 @@ const EventLedgerDetail = () => {
                     value={village}
                     onChange={handleVillageChange}
                     onKeyDown={handleVillageKeyDown}
-                    onFocus={() => villageSuggestions.length > 0 && setShowVillageSuggestions(true)}
+                    onFocus={() => {
+                      if (villageSuggestions.length > 0) {
+                        setShowVillageSuggestions(true);
+                      } else if (village.trim()) {
+                        handleVillageChange({ target: { value: village } });
+                      }
+                    }}
                     onBlur={() => {
                       setTimeout(() => {
                         if (!isSelectingRef.current) {
@@ -767,7 +778,7 @@ const EventLedgerDetail = () => {
 
                   {showVillageSuggestions && villageSuggestions.length > 0 && (
                     <div 
-                      className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#DDD1BF] z-50 max-h-48 overflow-y-auto custom-scrollbar rounded-xl touch-pan-y"
+                      className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#DDD1BF] z-[100] max-h-56 overflow-y-auto custom-scrollbar rounded-xl touch-pan-y"
                       onTouchStart={(e) => { e.stopPropagation(); isSelectingRef.current = true; }}
                       onTouchMove={(e) => e.stopPropagation()}
                       onMouseDown={() => { isSelectingRef.current = true; }}

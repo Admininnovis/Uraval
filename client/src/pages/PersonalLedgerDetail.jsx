@@ -130,20 +130,11 @@ const PersonalLedgerDetail = () => {
           notes,
         });
 
-        // Optimistically add to personalLedgers so user immediately sees entry even offline
-        const newLedgerItem = {
-          _id: res.data?.ledger?._id || res.data?._id || 'ledger_' + Date.now(),
-          personId: id,
-          eventName,
-          amount: numericAmount,
-          date: date || new Date().toISOString(),
-          notes,
-          isReturn: false,
-          isOffline: true,
-          createdAt: new Date().toISOString(),
-        };
-        setPersonalLedgers(prev => [newLedgerItem, ...prev.filter(l => l._id !== newLedgerItem._id)]);
-        setPerson(prev => prev ? { ...prev, totalReturned: (prev.totalReturned || 0) + numericAmount } : prev);
+        const savedItem = res.data?.ledger || res.data;
+        if (savedItem) {
+          setPersonalLedgers(prev => [savedItem, ...prev.filter(l => l._id !== savedItem._id)]);
+          setPerson(prev => prev ? { ...prev, totalReturned: (prev.totalReturned || 0) + numericAmount } : prev);
+        }
       }
 
       cancelEdit();
@@ -241,7 +232,6 @@ const PersonalLedgerDetail = () => {
       source: 'personal',
       isPositive: false, // Always false because personal ledger is only for 'I gave'
       editHistory: l.editHistory,
-      isOffline: l.isOffline || l._id?.startsWith('ledger_') || l._id?.startsWith('offline_')
     }))
   ].sort((a, b) => b.date - a.date); // Sort desc
 
@@ -367,14 +357,6 @@ const PersonalLedgerDetail = () => {
                                 <Tag size={10} /> {tData(item.notes)}
                               </span>
                             )}
-
-                            {/* Offline Pending Sync Badge */}
-                            {item.isOffline && (
-                              <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded flex items-center gap-1 shrink-0 shadow-xs">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                {t('eventLedgerDetail.pendingSync')}
-                              </span>
-                            )}
                           </div>
 
                           {/* Amount */}
@@ -474,12 +456,12 @@ const PersonalLedgerDetail = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className={`fixed bottom-16 md:bottom-6 left-0 right-0 z-30 flex justify-center pointer-events-none md:px-8 transition-transform duration-500 ease-in-out md:translate-y-0 ${!isFormOpen ? 'translate-y-[calc(100%-3.5rem)]' : 'translate-y-0'}`}
+          className={`fixed bottom-16 md:bottom-6 left-0 right-0 z-40 flex justify-center pointer-events-none md:px-8 transition-transform duration-500 ease-in-out md:translate-y-0 ${!isFormOpen ? 'translate-y-[calc(100%-3.5rem)]' : 'translate-y-0'}`}
         >
-          <div className="pointer-events-auto w-full max-w-5xl bg-[#F7F3EB] md:rounded-2xl shadow-[0_20px_50px_rgba(67,44,32,0.22)] border-t-2 border-l border-r md:border-2 border-[#DDD1BF] p-4 pt-2.5 md:p-6 relative rounded-t-2xl overflow-hidden">
+          <div className="pointer-events-auto w-full max-w-5xl bg-[#F7F3EB] md:rounded-2xl shadow-[0_20px_50px_rgba(67,44,32,0.22)] border-t-2 border-l border-r md:border-2 border-[#DDD1BF] p-4 pt-2.5 md:p-6 relative rounded-t-2xl overflow-visible">
 
             {/* Top Accent Line in Antique Gold */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#B68A3D] via-[#D4AF37] to-[#B68A3D]"></div>
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#B68A3D] via-[#D4AF37] to-[#B68A3D] rounded-t-2xl md:rounded-t-2xl"></div>
 
             {/* Mobile Drag Handle (Swipe down to dismiss, swipe up to open) */}
             <div 
@@ -539,7 +521,7 @@ const PersonalLedgerDetail = () => {
 
                   {showEventSuggestions && eventSuggestions.length > 0 && (
                     <div 
-                      className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#DDD1BF] z-50 max-h-48 overflow-y-auto custom-scrollbar rounded-xl touch-pan-y"
+                      className="absolute bottom-full left-0 w-full mb-2 bg-[#FDFBF7] shadow-2xl border-2 border-[#DDD1BF] z-[100] max-h-56 overflow-y-auto custom-scrollbar rounded-xl touch-pan-y"
                       onTouchStart={(e) => { e.stopPropagation(); isSelectingEventRef.current = true; }}
                       onTouchMove={(e) => e.stopPropagation()}
                       onMouseDown={() => { isSelectingEventRef.current = true; }}
