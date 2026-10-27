@@ -69,6 +69,55 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
   bool _showVillageSuggestions = false;
 
   bool _isSubmitting = false;
+  bool _isSelectingPerson = false;
+
+  List<EventEntryModel> _currentEventEntries = [];
+
+  List<EventEntryModel> get _exactMatchesInCurrentLedger {
+    if (_isReturnMode || _currentEventEntries.isEmpty) return [];
+    final cleanName = _cleanCompare(_nameController.text);
+    final cleanVillage = _cleanCompare(_villageController.text);
+    if (cleanName.length < 2) return [];
+
+    return _currentEventEntries.where((e) {
+      final eName = _cleanCompare(e.personName);
+      final eVillage = _cleanCompare(e.personVillage);
+      if (cleanVillage.isEmpty) {
+        return eName == cleanName;
+      }
+      return eName == cleanName && eVillage == cleanVillage;
+    }).toList();
+  }
+
+  bool get _isNoteRequired => _exactMatchesInCurrentLedger.isNotEmpty;
+
+  bool get _duplicateWithExactNote {
+    if (!_isNoteRequired) return false;
+    final currentNoteClean = _cleanCompare(_notesController.text);
+    if (currentNoteClean.isEmpty) return false;
+    return _exactMatchesInCurrentLedger.any((e) {
+      final enNoteClean = _cleanCompare(e.notes ?? e.personNotes);
+      return enNoteClean == currentNoteClean;
+    });
+  }
+
+  Future<void> _loadCurrentEventEntries(String? eventId) async {
+    if (eventId == null || eventId.isEmpty || _isReturnMode) {
+      if (mounted) {
+        setState(() => _currentEventEntries = []);
+      }
+      return;
+    }
+    try {
+      final data = await LedgerService.getEventById(eventId);
+      if (mounted) {
+        setState(() {
+          _currentEventEntries =
+              (data['entries'] as List<EventEntryModel>? ?? []);
+        });
+      }
+    } catch (_) {}
+  }
 
   static String _cleanCompare(String? text) {
     return (text ?? '').trim().toUpperCase().replaceAll(RegExp(r'\s+'), ' ');
@@ -88,6 +137,9 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
       _selectedEventId = ledgerProvider.events.first.id;
     }
 
+    // Load entries for duplicate detection
+    _loadCurrentEventEntries(_selectedEventId);
+
     // If initial person set, fill fields
     if (_selectedPersonId != null) {
       try {
@@ -101,12 +153,14 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
 
     _nameController.addListener(_onNameChanged);
     _villageController.addListener(_onVillageChanged);
+    _notesController.addListener(_onNotesChanged);
   }
 
   @override
   void dispose() {
     _nameController.removeListener(_onNameChanged);
     _villageController.removeListener(_onVillageChanged);
+    _notesController.removeListener(_onNotesChanged);
     _nameController.dispose();
     _villageController.dispose();
     _amountController.dispose();
@@ -115,7 +169,14 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
     super.dispose();
   }
 
+  void _onNotesChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   void _onNameChanged() {
+    if (_isSelectingPerson) return;
     final query = _cleanCompare(_nameController.text);
     if (_selectedPersonId != null) {
       // Clear selected person ID if user edits the text
@@ -183,16 +244,18 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
   }
 
   void _selectPerson(PersonModel person) {
+    _isSelectingPerson = true;
     setState(() {
-      _selectedPersonId = person.id;
       _nameController.text = person.name;
       _villageController.text = person.village;
       if (_notesController.text.isEmpty && person.notes != null) {
         _notesController.text = person.notes!;
       }
+      _selectedPersonId = person.id;
       _matchingPeople = [];
       _showSuggestions = false;
     });
+    _isSelectingPerson = false;
     FocusScope.of(context).unfocus();
   }
 
@@ -494,6 +557,9 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
                         setState(() {
                           _isReturnMode = set.first;
                         });
+                        if (!_isReturnMode && _selectedEventId != null) {
+                          _loadCurrentEventEntries(_selectedEventId);
+                        }
                       },
                       style: ButtonStyle(
                         visualDensity: VisualDensity.compact,
@@ -569,6 +635,9 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
                             }).toList(),
                             onChanged: (val) {
                               setState(() => _selectedEventId = val);
+                              if (val != null) {
+                                _loadCurrentEventEntries(val);
+                              }
                             },
                           ),
                         ),
@@ -653,6 +722,184 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
                         ),
                       ),
                       const SizedBox(height: 14),
+                    ],
+
+                    // Real-time Amber Duplicate Banner (matches Web EventLedgerDetail.jsx 100%)
+                    if (!_isReturnMode && _exactMatchesInCurrentLedger.isNotEmpty) ...[
+                      Builder(
+                        builder: (context) {
+                          final match = _exactMatchesInCurrentLedger.first;
+                          final matchVillage = match.personVillage.isNotEmpty
+                              ? match.personVillage
+                              : (lang.isTamil ? 'தெரியாத ஊர்' : 'Unknown Village');
+                          final notesText = _notesController.text.trim();
+                          final isExactCollision = _duplicateWithExactNote;
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFFBEB), // amber-50
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFFBBF24), // amber-400
+                                width: 1.6,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFD97706).withValues(alpha: 0.08),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Color(0xFFD97706),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: RichText(
+                                        text: TextSpan(
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Color(0xFF78350F), // amber-900
+                                            height: 1.35,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: '"${match.personName}" ',
+                                              style: const TextStyle(fontWeight: FontWeight.bold),
+                                            ),
+                                            TextSpan(
+                                              text: '($matchVillage) ',
+                                              style: const TextStyle(color: Color(0xFF92400E)),
+                                            ),
+                                            TextSpan(
+                                              text: lang.isTamil
+                                                  ? 'ஏற்கனவே இந்த நோட்டில் உள்ளார்!'
+                                                  : 'already exists in this ledger!',
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    // Last Entry info
+                                    Flexible(
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            lang.isTamil ? 'கடைசி பதிவு: ' : 'Last Entry: ',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFFB45309),
+                                            ),
+                                          ),
+                                          Text(
+                                            '₹${match.amount}',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF78350F),
+                                            ),
+                                          ),
+                                          if (match.notes != null && match.notes!.isNotEmpty) ...[
+                                            const SizedBox(width: 6),
+                                            Flexible(
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFFDE68A).withValues(alpha: 0.6),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: const Color(0xFFFCD34D)),
+                                                ),
+                                                child: Text(
+                                                  match.notes!,
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                    fontStyle: FontStyle.italic,
+                                                    color: Color(0xFF78350F),
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    // Live status badge
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: notesText.isEmpty
+                                            ? const Color(0xFFF59E0B) // Amber
+                                            : (isExactCollision
+                                                ? const Color(0xFFFFE4E6) // Rose-100
+                                                : const Color(0xFFD1FAE5)), // Emerald-100
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: notesText.isEmpty
+                                              ? const Color(0xFFD97706)
+                                              : (isExactCollision
+                                                  ? const Color(0xFFFDA4AF)
+                                                  : const Color(0xFF6EE7B7)),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (notesText.isNotEmpty && !isExactCollision) ...[
+                                            const Icon(
+                                              Icons.check_circle_rounded,
+                                              size: 11,
+                                              color: Color(0xFF065F46),
+                                            ),
+                                            const SizedBox(width: 3),
+                                          ],
+                                          Text(
+                                            notesText.isEmpty
+                                                ? (lang.isTamil ? '* குறிப்பு அவசியம்' : '* NOTE REQUIRED')
+                                                : (isExactCollision
+                                                    ? (lang.isTamil ? 'இதே குறிப்பு உள்ளது' : 'NOTE COLLISION')
+                                                    : (lang.isTamil ? 'வேறுபடுத்தப்பட்டது ✓' : 'DIFFERENTIATED ✓')),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.5,
+                                              color: notesText.isEmpty
+                                                  ? Colors.white
+                                                  : (isExactCollision
+                                                      ? const Color(0xFFBE123C)
+                                                      : const Color(0xFF065F46)),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ],
 
                     // Person Name Field with Autocomplete suggestions
@@ -845,12 +1092,39 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
 
                     const SizedBox(height: 14),
 
-                    // Notes Field
+                    // Notes Field with dynamic amber border and note required badge
                     CustomTextField(
                       controller: _notesController,
                       label: lang.t('notes'),
-                      hint: lang.t('notes_placeholder'),
+                      hint: _isNoteRequired
+                          ? (lang.isTamil ? 'எ.கா: பெரிய வீடு / மகன்...' : 'e.g. Periya Veedu / Son of...')
+                          : lang.t('notes_placeholder'),
                       maxLines: 2,
+                      borderColor: _isNoteRequired
+                          ? (_notesController.text.trim().isEmpty
+                              ? const Color(0xFFF59E0B) // Amber
+                              : (_duplicateWithExactNote
+                                  ? const Color(0xFFEF4444) // Rose / Red
+                                  : const Color(0xFF10B981))) // Emerald
+                          : null,
+                      headerTrailing: _isNoteRequired
+                          ? Text(
+                              _notesController.text.trim().isEmpty
+                                  ? (lang.isTamil ? '* குறிப்பு அவசியம்' : '* Note Required')
+                                  : (_duplicateWithExactNote
+                                      ? (lang.isTamil ? 'இதே குறிப்பு உள்ளது' : 'Duplicate Note')
+                                      : (lang.isTamil ? 'வேறுபடுத்தப்பட்டது ✓' : 'Differentiated ✓')),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: _notesController.text.trim().isEmpty
+                                    ? const Color(0xFFD97706)
+                                    : (_duplicateWithExactNote
+                                        ? const Color(0xFFE11D48)
+                                        : const Color(0xFF059669)),
+                              ),
+                            )
+                          : null,
                     ),
 
                     const SizedBox(height: 24),
