@@ -5,7 +5,7 @@ import '../../providers/language_provider.dart';
 import '../../providers/ledger_provider.dart';
 import '../../widgets/event_book_cover.dart';
 import '../../widgets/uravin_loading.dart';
-import 'create_event_dialog.dart';
+import '../../widgets/web_booklet_redirect_dialog.dart';
 import 'event_detail_screen.dart';
 
 class EventListScreen extends StatefulWidget {
@@ -64,10 +64,7 @@ class _EventListScreenState extends State<EventListScreen> {
             icon: const Icon(Icons.add, color: AppColors.goldAccent),
             tooltip: lang.t('open_book'),
             onPressed: () {
-              showDialog(
-                context: context,
-                builder: (_) => const CreateEventDialog(),
-              );
+              WebBookletRedirectDialog.show(context);
             },
           ),
         ],
@@ -184,10 +181,7 @@ class _EventListScreenState extends State<EventListScreen> {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         onPressed: () {
-          showDialog(
-            context: context,
-            builder: (_) => const CreateEventDialog(),
-          );
+          WebBookletRedirectDialog.show(context);
         },
       ),
     );

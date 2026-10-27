@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../constants/api_endpoints.dart';
 import '../../constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
@@ -89,6 +91,110 @@ class SettingsScreen extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Subscription & Maintenance Section
+            _SectionContainer(
+              title: lang.isTamil ? 'கணக்கு பராமரிப்பு' : 'Account Maintenance',
+              subtitle: lang.isTamil
+                  ? 'பராமரிப்பு மற்றும் விலைப்பட்டியல்'
+                  : 'Subscription status & statutory receipts',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            auth.isAccessExpired
+                                ? Icons.warning_amber_rounded
+                                : Icons.verified_user_rounded,
+                            size: 20,
+                            color: auth.isAccessExpired
+                                ? AppColors.error
+                                : const Color(0xFF16A34A),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            auth.isAccessExpired
+                                ? (lang.isTamil ? 'காலாவதியானது' : 'Access Expired')
+                                : (lang.isTamil ? 'செயலில் உள்ளது' : 'Active Account'),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: auth.isAccessExpired
+                                  ? AppColors.error
+                                  : const Color(0xFF16A34A),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (auth.accountAccess?['daysRemaining'] != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.background,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Text(
+                            lang.isTamil
+                                ? '${auth.accountAccess!['daysRemaining']} நாட்கள் உள்ளன'
+                                : '${auth.accountAccess!['daysRemaining']} days left',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final uri = Uri.parse(ApiEndpoints.webSubscriptionUrl);
+                      try {
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      } catch (_) {
+                        if (context.mounted) {
+                          AppToast.showError(
+                            context,
+                            'Please visit: ${ApiEndpoints.webSubscriptionUrl}',
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.open_in_browser_rounded, size: 16),
+                    label: Text(
+                      lang.isTamil
+                          ? 'இணையதளத்தில் புதுப்பிக்கவும் / நிர்வகிக்கவும்'
+                          : 'Manage & Renew on Website',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.gold),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ],

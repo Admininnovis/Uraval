@@ -97,7 +97,7 @@ const Dashboard = () => {
   const [showNewEventModal, setShowNewEventModal] = useState(false);
   const [eventForm, setEventForm] = useState({
     eventName: '',
-    eventType: 'Marriage',
+    eventType: 'Wedding',
     eventDate: new Date().toISOString().split('T')[0],
     location: '',
     description: ''
@@ -170,7 +170,7 @@ const Dashboard = () => {
               setShowNewEventModal(false);
               setEventForm({
                 eventName: '',
-                eventType: 'Marriage',
+                eventType: 'Wedding',
                 eventDate: new Date().toISOString().split('T')[0],
                 location: '',
                 description: '',
@@ -610,14 +610,14 @@ const Dashboard = () => {
               <form onSubmit={handleCreateEvent} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1">
-                    {t('dashboard.eventName')} *
+                    {t('eventLedger.ledgerTitle')} *
                   </label>
                   <input
                     type="text"
                     required
                     value={eventForm.eventName}
                     onChange={(e) => setEventForm({ ...eventForm, eventName: e.target.value })}
-                    placeholder={t('dashboard.eventNamePlaceholder')}
+                    placeholder={language === 'ta' ? 'உ.ம்: பிரியா திருமணம்' : 'e.g. Priya Wedding'}
                     className="w-full bg-[#EDE5D8]/60 border border-[#DDD1BF] focus:border-[#B68A3D] focus:ring-2 focus:ring-[#B68A3D]/20 rounded-lg px-3 py-2 text-sm outline-none text-[#432C20]"
                   />
                 </div>
@@ -625,23 +625,25 @@ const Dashboard = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1">
-                      {t('dashboard.eventType')}
+                      {t('eventLedger.eventType')}
                     </label>
                     <select
                       value={eventForm.eventType}
                       onChange={(e) => setEventForm({ ...eventForm, eventType: e.target.value })}
                       className="w-full bg-[#EDE5D8]/60 border border-[#DDD1BF] focus:border-[#B68A3D] rounded-lg px-3 py-2 text-sm outline-none text-[#432C20]"
                     >
-                      <option value="Marriage">{t('dashboard.types.marriage')}</option>
-                      <option value="Baby Shower">{t('dashboard.types.babyShower')}</option>
-                      <option value="Birthday">{t('dashboard.types.birthday')}</option>
-                      <option value="House Warming">{t('dashboard.types.houseWarming')}</option>
-                      <option value="Other">{t('dashboard.types.other')}</option>
+                      <option value="Wedding">{t('eventLedger.types.wedding')}</option>
+                      <option value="Housewarming">{t('eventLedger.types.housewarming')}</option>
+                      <option value="Seemantham">{t('eventLedger.types.seemantham')}</option>
+                      <option value="Birthday">{t('eventLedger.types.birthday')}</option>
+                      <option value="Ear Piercing">{t('eventLedger.types.earPiercing')}</option>
+                      <option value="Temple Function">{t('eventLedger.types.temple')}</option>
+                      <option value="Custom">{t('eventLedger.types.custom')}</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1">
-                      {t('dashboard.eventDate')}
+                      {t('eventLedger.date')}
                     </label>
                     <input
                       type="date"
@@ -654,24 +656,21 @@ const Dashboard = () => {
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1">
-                    {t('dashboard.location')}
+                    {t('eventLedger.location')}
                   </label>
                   <input
                     type="text"
                     value={eventForm.location}
                     onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
-                    placeholder={t('dashboard.locationPlaceholder')}
+                    placeholder={language === 'ta' ? 'உ.ம்: சேலம்' : 'e.g. Salem'}
                     className="w-full bg-[#EDE5D8]/60 border border-[#DDD1BF] focus:border-[#B68A3D] rounded-lg px-3 py-2 text-sm outline-none text-[#432C20]"
                   />
                 </div>
 
-                {/* Booklet Fee Notice */}
-                <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
-                  <div>
-                    <p className="font-bold">Booklet Creation Fee</p>
-                    <p className="text-[11px] text-amber-800">One-time payment • Includes 18% GST</p>
-                  </div>
-                  <span className="font-bold text-base text-[#432C20]">₹150</span>
+                {/* Pricing & GST Notice - Identical to EventLedger.jsx */}
+                <div className="p-3.5 bg-amber-50/90 border border-[#D4AF37] rounded-xl text-xs text-[#432C20] font-medium leading-relaxed">
+                  <p className="font-bold text-[#8B0000]">Pricing Information:</p>
+                  <p>“₹150 one-time charge per booklet, including GST. Account maintenance is charged separately.”</p>
                 </div>
 
                 {paymentMessage && (

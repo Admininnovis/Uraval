@@ -7,16 +7,14 @@ import 'providers/auth_provider.dart';
 import 'providers/language_provider.dart';
 import 'providers/ledger_provider.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/billing/access_expired_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'services/api_service.dart';
-import 'services/offline_queue_service.dart';
-import 'widgets/network_status_banner.dart';
 import 'widgets/uravin_loading.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ApiService.init();
-  OfflineQueueService.init();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -79,8 +77,7 @@ class UravinApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      builder: (context, child) =>
-          NetworkStatusBanner(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => child ?? const SizedBox.shrink(),
       home: const AppRootRouter(),
     );
   }
@@ -98,6 +95,9 @@ class AppRootRouter extends StatelessWidget {
     }
 
     if (auth.isAuthenticated) {
+      if (auth.isAccessExpired) {
+        return const AccessExpiredScreen();
+      }
       return const MainNavigationScreen();
     }
 

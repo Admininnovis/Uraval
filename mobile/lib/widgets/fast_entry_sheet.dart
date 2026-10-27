@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
+import '../models/entry_model.dart';
 import '../models/person_model.dart';
 import '../providers/language_provider.dart';
 import '../providers/ledger_provider.dart';
 import '../services/ledger_service.dart';
-import '../services/network_status_service.dart';
-import '../services/offline_queue_service.dart';
 import 'app_toast.dart';
 import 'custom_button.dart';
 import 'custom_text_field.dart';
@@ -60,9 +60,19 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
   final TextEditingController _returnEventNameController =
       TextEditingController();
 
+  DateTime _selectedDate = DateTime.now();
+
   List<PersonModel> _matchingPeople = [];
   bool _showSuggestions = false;
+
+  List<String> _villageSuggestions = [];
+  bool _showVillageSuggestions = false;
+
   bool _isSubmitting = false;
+
+  static String _cleanCompare(String? text) {
+    return (text ?? '').trim().toUpperCase().replaceAll(RegExp(r'\s+'), ' ');
+  }
 
   @override
   void initState() {
@@ -90,11 +100,13 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
     }
 
     _nameController.addListener(_onNameChanged);
+    _villageController.addListener(_onVillageChanged);
   }
 
   @override
   void dispose() {
     _nameController.removeListener(_onNameChanged);
+    _villageController.removeListener(_onVillageChanged);
     _nameController.dispose();
     _villageController.dispose();
     _amountController.dispose();
@@ -104,7 +116,12 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
   }
 
   void _onNameChanged() {
-    final query = _nameController.text.trim().toLowerCase();
+    final query = _cleanCompare(_nameController.text);
+    if (_selectedPersonId != null) {
+      // Clear selected person ID if user edits the text
+      _selectedPersonId = null;
+    }
+
     if (query.isEmpty) {
       if (mounted) {
         setState(() {
@@ -118,15 +135,49 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
     final allPeople =
         Provider.of<LedgerProvider>(context, listen: false).people;
     final matches = allPeople.where((p) {
-      return p.name.toLowerCase().contains(query) ||
-          p.village.toLowerCase().contains(query) ||
-          (p.notes != null && p.notes!.toLowerCase().contains(query));
+      final pName = _cleanCompare(p.name);
+      final pVillage = _cleanCompare(p.village);
+      final pNotes = _cleanCompare(p.notes);
+      return pName.contains(query) ||
+          pVillage.contains(query) ||
+          pNotes.contains(query);
     }).take(5).toList();
 
     if (mounted) {
       setState(() {
         _matchingPeople = matches;
         _showSuggestions = matches.isNotEmpty;
+      });
+    }
+  }
+
+  void _onVillageChanged() {
+    final query = _cleanCompare(_villageController.text);
+    if (query.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _villageSuggestions = [];
+          _showVillageSuggestions = false;
+        });
+      }
+      return;
+    }
+
+    final allPeople =
+        Provider.of<LedgerProvider>(context, listen: false).people;
+    final Set<String> uniqueVillages = {};
+    for (final p in allPeople) {
+      if (p.village.trim().isNotEmpty &&
+          _cleanCompare(p.village).contains(query)) {
+        uniqueVillages.add(p.village.trim().toUpperCase());
+      }
+    }
+
+    final matches = uniqueVillages.take(5).toList();
+    if (mounted) {
+      setState(() {
+        _villageSuggestions = matches;
+        _showVillageSuggestions = matches.isNotEmpty;
       });
     }
   }
@@ -143,6 +194,39 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
       _showSuggestions = false;
     });
     FocusScope.of(context).unfocus();
+  }
+
+  void _selectVillage(String village) {
+    setState(() {
+      _villageController.text = village;
+      _villageSuggestions = [];
+      _showVillageSuggestions = false;
+    });
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              surface: AppColors.surface,
+              onSurface: AppColors.textDark,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() => _selectedDate = picked);
+    }
   }
 
   Future<void> _handleSubmit() async {
@@ -163,55 +247,59 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
 
     setState(() => _isSubmitting = true);
 
-    // If device is offline, store in offline queue immediately
-    if (!NetworkStatusService.isOnline.value) {
-      try {
-        if (_isReturnMode) {
-          final eventName = _returnEventNameController.text.trim().isEmpty
-              ? 'Return Money'
-              : _returnEventNameController.text.trim();
-
-          await OfflineQueueService.queuePersonalEntry(
-            personId: _selectedPersonId,
-            name: name,
-            village: village,
-            eventName: eventName,
-            amount: amount,
-            notes: notes,
-          );
-        } else {
-          if (_selectedEventId == null || _selectedEventId!.isEmpty) {
-            throw Exception(lang.t('select_event_prompt'));
-          }
-
-          await OfflineQueueService.queueEventEntry(
-            eventId: _selectedEventId!,
-            personId: _selectedPersonId,
-            name: name,
-            village: village,
-            amount: amount,
-            notes: notes,
-          );
-        }
-
-        if (mounted) {
-          Navigator.pop(context, true);
-          AppToast.showSuccess(context, lang.t('saved_offline'));
-        }
-        return;
-      } catch (e) {
-        if (mounted) {
-          AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
-        }
-        return;
-      } finally {
-        if (mounted) {
-          setState(() => _isSubmitting = false);
-        }
-      }
-    }
-
     try {
+      // Duplicate detection in Event Ledger
+      if (!_isReturnMode) {
+        if (_selectedEventId == null || _selectedEventId!.isEmpty) {
+          throw Exception(lang.t('select_event_prompt'));
+        }
+
+        try {
+          final eventData =
+              await LedgerService.getEventById(_selectedEventId!);
+          final existingEntries =
+              eventData['entries'] as List<EventEntryModel>? ?? [];
+
+          final cleanTypedName = _cleanCompare(name);
+          final cleanTypedVillage = _cleanCompare(village);
+          final cleanTypedNotes = _cleanCompare(notes);
+
+          final samePersonMatches = existingEntries.where((e) {
+            return _cleanCompare(e.personName) == cleanTypedName &&
+                _cleanCompare(e.personVillage) == cleanTypedVillage;
+          }).toList();
+
+          if (samePersonMatches.isNotEmpty) {
+            if (cleanTypedNotes.isEmpty) {
+              final matched = samePersonMatches.first;
+              if (mounted) {
+                AppToast.showError(
+                  context,
+                  lang.isTamil
+                      ? '"${matched.personName}" (${matched.personVillage}) ஏற்கனவே இந்த நோட்டில் உள்ளார். வேறுபடுத்த குறிப்பு (Note) அவசியம்!'
+                      : '"${matched.personName}" (${matched.personVillage}) already exists in this event. A Note is required to distinguish them.',
+                );
+              }
+              return;
+            }
+
+            final exactDuplicate = samePersonMatches.any((e) =>
+                _cleanCompare(e.notes) == cleanTypedNotes);
+            if (exactDuplicate) {
+              if (mounted) {
+                AppToast.showError(
+                  context,
+                  lang.isTamil
+                      ? 'இதே பெயர், ஊர் மற்றும் குறிப்புடன் உள்ளீடு ஏற்கனவே உள்ளது!'
+                      : 'An entry with this exact Name, Village, and Note already exists in this event.',
+                );
+              }
+              return;
+            }
+          }
+        } catch (_) {}
+      }
+
       String personId = _selectedPersonId ?? '';
 
       // If no person selected or name changed, create/find person
@@ -235,7 +323,7 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
           personId: personId,
           eventName: eventName,
           amount: amount,
-          date: DateTime.now(),
+          date: _selectedDate,
           notes: notes,
         );
       } else {
@@ -260,44 +348,6 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
         AppToast.showSuccess(context, lang.t('entry_added_success'));
       }
     } catch (e) {
-      final errStr = e.toString().toLowerCase();
-      if (errStr.contains('network_offline') ||
-          errStr.contains('socketexception') ||
-          errStr.contains('network error') ||
-          errStr.contains('timeout')) {
-        // Fallback: save to offline queue when unexpected network error occurs
-        try {
-          if (_isReturnMode) {
-            final eventName = _returnEventNameController.text.trim().isEmpty
-                ? 'Return Money'
-                : _returnEventNameController.text.trim();
-
-            await OfflineQueueService.queuePersonalEntry(
-              personId: _selectedPersonId,
-              name: name,
-              village: village,
-              eventName: eventName,
-              amount: amount,
-              notes: notes,
-            );
-          } else {
-            await OfflineQueueService.queueEventEntry(
-              eventId: _selectedEventId!,
-              personId: _selectedPersonId,
-              name: name,
-              village: village,
-              amount: amount,
-              notes: notes,
-            );
-          }
-          if (mounted) {
-            Navigator.pop(context, true);
-            AppToast.showSuccess(context, lang.t('saved_offline'));
-          }
-          return;
-        } catch (_) {}
-      }
-
       if (mounted) {
         AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
       }
@@ -530,6 +580,78 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
                         label: lang.t('event_name'),
                         hint: lang.t('event_name_placeholder'),
                       ),
+                      if (ledger.events.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: ledger.events.map((e) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: ActionChip(
+                                  visualDensity: VisualDensity.compact,
+                                  backgroundColor: const Color(0xFFEDE5D8),
+                                  label: Text(
+                                    lang.tData(e.eventName),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF432C20),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _returnEventNameController.text = e.eventName;
+                                    });
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 14),
+                      // Return Date Picker
+                      InkWell(
+                        onTap: _pickDate,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceLight,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppColors.border,
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.calendar_today,
+                                size: 18,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                '${lang.t('date')}: ${DateFormat('dd MMM yyyy').format(_selectedDate)}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                              const Spacer(),
+                              const Icon(
+                                Icons.arrow_drop_down,
+                                color: AppColors.textSubtle,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 14),
                     ],
 
@@ -635,6 +757,61 @@ class _FastEntrySheetState extends State<FastEntrySheet> {
                           ? lang.t('village_required')
                           : null,
                     ),
+
+                    if (_showVillageSuggestions && _villageSuggestions.isNotEmpty) ...[
+                      Container(
+                        margin: const EdgeInsets.only(top: 4, bottom: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceLight,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.gold, width: 1.2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryDark.withValues(alpha: 0.08),
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _villageSuggestions.length,
+                          separatorBuilder: (context, index) =>
+                              const Divider(height: 1, color: AppColors.border),
+                          itemBuilder: (context, idx) {
+                            final villageName = _villageSuggestions[idx];
+                            return InkWell(
+                              onTap: () => _selectVillage(villageName),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on_outlined,
+                                      size: 18,
+                                      color: AppColors.gold,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      villageName,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textDark,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
 
                     const SizedBox(height: 14),
 

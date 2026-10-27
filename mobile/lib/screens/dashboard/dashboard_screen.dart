@@ -8,7 +8,7 @@ import '../../providers/ledger_provider.dart';
 import '../../widgets/event_book_cover.dart';
 import '../../widgets/fast_entry_sheet.dart';
 import '../../widgets/uravin_loading.dart';
-import '../events/create_event_dialog.dart';
+import '../../widgets/web_booklet_redirect_dialog.dart';
 import '../events/event_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -195,10 +195,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             color: AppColors.surface,
                             textColor: AppColors.primary,
                             onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (_) => const CreateEventDialog(),
-                              );
+                              WebBookletRedirectDialog.show(context);
                             },
                           ),
                         ),
@@ -359,10 +356,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               const SizedBox(height: 12),
                               ElevatedButton(
                                 onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (_) => const CreateEventDialog(),
-                                  );
+                                  WebBookletRedirectDialog.show(context);
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,

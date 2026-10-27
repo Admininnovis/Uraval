@@ -26,6 +26,12 @@ class EventBookCover extends StatelessWidget {
       case 'house warming':
       case 'housewarming':
         return Icons.home_outlined;
+      case 'seemantham':
+      case 'baby shower':
+        return Icons.pregnant_woman;
+      case 'temple function':
+      case 'temple':
+        return Icons.temple_hindu_outlined;
       case 'puberty function':
         return Icons.celebration_outlined;
       case 'birthday':

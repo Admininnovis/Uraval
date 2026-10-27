@@ -7,7 +7,6 @@ import '../../models/event_model.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/ledger_provider.dart';
 import '../../services/ledger_service.dart';
-import '../../services/offline_queue_service.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/fast_entry_sheet.dart';
@@ -44,31 +43,27 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   Future<void> _fetchDetail() async {
     setState(() => _isLoading = true);
-    final offlineEntries = await OfflineQueueService.getPendingEntriesForEvent(widget.eventId);
     try {
       final res = await LedgerService.getEventById(widget.eventId);
-      final serverEntries = res['entries'] as List<EventEntryModel>;
-      setState(() {
-        _event = res['event'] as EventModel;
-        _entries = [...offlineEntries, ...serverEntries];
-        _stats = res['stats'] as Map<String, dynamic>;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _event = res['event'] as EventModel;
+          _entries = res['entries'] as List<EventEntryModel>;
+          _stats = res['stats'] as Map<String, dynamic>;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        if (offlineEntries.isNotEmpty) {
-          _entries = [...offlineEntries, ..._entries.where((e) => !e.isOffline)];
-        }
-      });
-      final errStr = e.toString().toLowerCase();
-      if (!errStr.contains('network_offline') && !errStr.contains('socketexception') && mounted) {
+      if (mounted) {
+        setState(() => _isLoading = false);
         AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
       }
     }
   }
 
   void _showEditEntryDialog(EventEntryModel entry) {
+    final nameController = TextEditingController(text: entry.personName);
+    final villageController = TextEditingController(text: entry.personVillage);
     final amountController =
         TextEditingController(text: entry.amount.toString());
     final notesController = TextEditingController(text: entry.notes ?? '');
@@ -94,32 +89,44 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 color: AppColors.primary,
               ),
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CustomTextField(
-                  controller: amountController,
-                  label: lang.t('amount'),
-                  keyboardType: TextInputType.number,
-                  prefixIcon: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      '₹',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CustomTextField(
+                    controller: nameController,
+                    label: lang.t('person_name'),
+                  ),
+                  const SizedBox(height: 12),
+                  CustomTextField(
+                    controller: villageController,
+                    label: lang.t('village'),
+                  ),
+                  const SizedBox(height: 12),
+                  CustomTextField(
+                    controller: amountController,
+                    label: lang.t('amount'),
+                    keyboardType: TextInputType.number,
+                    prefixIcon: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        '₹',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                CustomTextField(
-                  controller: notesController,
-                  label: lang.t('notes'),
-                  maxLines: 2,
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  CustomTextField(
+                    controller: notesController,
+                    label: lang.t('notes'),
+                    maxLines: 2,
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -137,18 +144,50 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 onPressed: isSaving
                     ? null
                     : () async {
+                        final newName = nameController.text.trim().toUpperCase();
+                        final newVillage =
+                            villageController.text.trim().toUpperCase();
+                        final newNotes = notesController.text.trim();
                         final newAmount =
                             num.tryParse(amountController.text.trim()) ?? 0;
-                        if (newAmount <= 0) return;
+
+                        if (newName.isEmpty) {
+                          AppToast.showError(ctx, lang.t('name_required'));
+                          return;
+                        }
+                        if (newVillage.isEmpty) {
+                          AppToast.showError(ctx, lang.t('village_required'));
+                          return;
+                        }
+                        if (newAmount <= 0) {
+                          AppToast.showError(ctx, lang.t('amount_required'));
+                          return;
+                        }
 
                         setDialogState(() => isSaving = true);
-                        final ledger = Provider.of<LedgerProvider>(context, listen: false);
+                        final ledger =
+                            Provider.of<LedgerProvider>(context, listen: false);
                         try {
+                          // Update person details if name/village/note changed
+                          if (entry.personId.isNotEmpty &&
+                              (newName != entry.personName.trim().toUpperCase() ||
+                                  newVillage !=
+                                      entry.personVillage.trim().toUpperCase() ||
+                                  newNotes !=
+                                      (entry.personNotes ?? '').trim())) {
+                            await LedgerService.updatePerson(
+                              id: entry.personId,
+                              name: newName,
+                              village: newVillage,
+                              notes: newNotes,
+                            );
+                          }
+
                           await LedgerService.updateEventEntry(
                             eventId: widget.eventId,
                             entryId: entry.id,
                             amount: newAmount,
-                            notes: notesController.text.trim(),
+                            notes: newNotes,
                           );
                           if (ctx.mounted) {
                             Navigator.pop(ctx);
@@ -714,31 +753,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                       maxLines: 1,
                                                       overflow: TextOverflow.ellipsis,
                                                     ),
-                                                  ),
-                                                ),
-                                              if (entry.isOffline)
-                                                Container(
-                                                  margin: const EdgeInsets.only(left: 6),
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.amber.shade100,
-                                                    borderRadius: BorderRadius.circular(4),
-                                                    border: Border.all(color: Colors.amber.shade400),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize: MainAxisSize.min,
-                                                    children: [
-                                                      Icon(Icons.cloud_off, size: 10, color: Colors.amber.shade900),
-                                                      const SizedBox(width: 3),
-                                                      Text(
-                                                        lang.t('offline_pending_sync'),
-                                                        style: TextStyle(
-                                                          fontSize: 9.5,
-                                                          fontWeight: FontWeight.bold,
-                                                          color: Colors.amber.shade900,
-                                                        ),
-                                                      ),
-                                                    ],
                                                   ),
                                                 ),
                                             ],

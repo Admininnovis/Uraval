@@ -7,7 +7,6 @@ import '../../models/person_model.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/ledger_provider.dart';
 import '../../services/ledger_service.dart';
-import '../../services/offline_queue_service.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/fast_entry_sheet.dart';
@@ -43,25 +42,19 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
 
   Future<void> _fetchPerson() async {
     setState(() => _isLoading = true);
-    final offlinePersonal = await OfflineQueueService.getPendingEntriesForPerson(widget.personId);
     try {
       final res = await LedgerService.getPersonById(widget.personId);
-      final serverPersonal = res['personalLedgers'] as List<PersonalLedgerEntryModel>;
-      setState(() {
-        _person = res['person'] as PersonModel;
-        _eventEntries = res['eventEntries'] as List<EventEntryModel>;
-        _personalLedgers = [...offlinePersonal, ...serverPersonal];
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _person = res['person'] as PersonModel;
+          _eventEntries = res['eventEntries'] as List<EventEntryModel>;
+          _personalLedgers = res['personalLedgers'] as List<PersonalLedgerEntryModel>;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        if (offlinePersonal.isNotEmpty) {
-          _personalLedgers = [...offlinePersonal, ..._personalLedgers.where((p) => !p.isOffline)];
-        }
-      });
-      final errStr = e.toString().toLowerCase();
-      if (!errStr.contains('network_offline') && !errStr.contains('socketexception') && mounted) {
+      if (mounted) {
+        setState(() => _isLoading = false);
         AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
       }
     }
@@ -130,12 +123,14 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
                 onPressed: isSaving
                     ? null
                     : () async {
-                        final name = nameController.text.trim();
-                        final village = villageController.text.trim();
+                        final name = nameController.text.trim().toUpperCase();
+                        final village =
+                            villageController.text.trim().toUpperCase();
                         if (name.isEmpty || village.isEmpty) return;
 
                         setDialogState(() => isSaving = true);
-                        final ledger = Provider.of<LedgerProvider>(context, listen: false);
+                        final ledger =
+                            Provider.of<LedgerProvider>(context, listen: false);
                         try {
                           await LedgerService.updatePerson(
                             id: widget.personId,
@@ -148,6 +143,189 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
                           }
                           _fetchPerson();
                           ledger.fetchPeople();
+                        } catch (e) {
+                          setDialogState(() => isSaving = false);
+                          if (ctx.mounted) {
+                            AppToast.showError(
+                              ctx,
+                              e.toString().replaceFirst('Exception: ', ''),
+                            );
+                          }
+                        }
+                      },
+                child: isSaving
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: UravinLoading(size: 22),
+                      )
+                    : Text(lang.t('save')),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showEditPersonalLedgerDialog(PersonalLedgerEntryModel entry) {
+    final eventNameController = TextEditingController(text: entry.eventName);
+    final amountController =
+        TextEditingController(text: entry.amount.toString());
+    final notesController = TextEditingController(text: entry.notes ?? '');
+    DateTime editDate = entry.date;
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final lang = Provider.of<LanguageProvider>(context);
+
+          return AlertDialog(
+            backgroundColor: AppColors.background,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: AppColors.border),
+            ),
+            title: Text(
+              lang.t('edit_entry'),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CustomTextField(
+                    controller: eventNameController,
+                    label: lang.t('event_name'),
+                    hint: lang.t('event_name_placeholder'),
+                  ),
+                  const SizedBox(height: 12),
+                  // Date Picker Tile
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: editDate,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) {
+                        setDialogState(() => editDate = picked);
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceLight,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppColors.border,
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_today,
+                            size: 18,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            '${lang.t('date')}: ${DateFormat('dd MMM yyyy').format(editDate)}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                          const Spacer(),
+                          const Icon(
+                            Icons.arrow_drop_down,
+                            color: AppColors.textSubtle,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  CustomTextField(
+                    controller: amountController,
+                    label: lang.t('amount'),
+                    keyboardType: TextInputType.number,
+                    prefixIcon: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        '₹',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  CustomTextField(
+                    controller: notesController,
+                    label: lang.t('notes'),
+                    maxLines: 2,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  lang.t('cancel'),
+                  style: const TextStyle(color: AppColors.textMuted),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.goldAccent,
+                ),
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        final newEventName = eventNameController.text.trim();
+                        final newAmount =
+                            num.tryParse(amountController.text.trim()) ?? 0;
+                        if (newAmount <= 0) {
+                          AppToast.showError(ctx, lang.t('amount_required'));
+                          return;
+                        }
+
+                        setDialogState(() => isSaving = true);
+                        final ledger =
+                            Provider.of<LedgerProvider>(context, listen: false);
+                        try {
+                          await LedgerService.updateLedgerEntry(
+                            id: entry.id,
+                            eventName: newEventName.isEmpty
+                                ? 'Return Money'
+                                : newEventName,
+                            amount: newAmount,
+                            date: editDate,
+                            notes: notesController.text.trim(),
+                          );
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                          }
+                          _fetchPerson();
+                          ledger.refreshAll();
                         } catch (e) {
                           setDialogState(() => isSaving = false);
                           if (ctx.mounted) {
@@ -220,16 +398,21 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
 
     for (var e in _eventEntries) {
       timeline.add({
+        'id': e.id,
+        'isEvent': true,
         'type': 'received',
         'title': lang.isTamil ? 'நிகழ்வில் பெற்றது' : 'Received in Event',
         'amount': e.amount,
         'date': e.createdAt,
         'notes': e.notes,
+        'raw': e,
       });
     }
 
     for (var l in _personalLedgers) {
       timeline.add({
+        'id': l.id,
+        'isEvent': false,
         'type': 'returned',
         'title': lang.isTamil
             ? 'திருப்பிச் செலுத்தியது: ${lang.tData(l.eventName)}'
@@ -237,7 +420,7 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
         'amount': l.amount,
         'date': l.date,
         'notes': l.notes,
-        'isOffline': l.isOffline,
+        'raw': l,
       });
     }
 
@@ -386,7 +569,7 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: badgeColor.withOpacity(0.12),
+                        color: badgeColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: badgeColor),
                       ),
@@ -591,7 +774,7 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: itemColor.withOpacity(0.1),
+                                color: itemColor.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -634,31 +817,6 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
                                         color: AppColors.textSubtle,
                                       ),
                                     ),
-                                  if (item['isOffline'] == true)
-                                    Container(
-                                      margin: const EdgeInsets.only(top: 3),
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.amber.shade100,
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(color: Colors.amber.shade400),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.cloud_off, size: 10, color: Colors.amber.shade900),
-                                          const SizedBox(width: 3),
-                                          Text(
-                                            lang.t('offline_pending_sync'),
-                                            style: TextStyle(
-                                              fontSize: 9.5,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.amber.shade900,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
                                 ],
                               ),
                             ),
@@ -670,6 +828,23 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
                                 color: itemColor,
                               ),
                             ),
+                            if (item['isEvent'] == false &&
+                                item['raw'] is PersonalLedgerEntryModel) ...[
+                              const SizedBox(width: 6),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit_outlined,
+                                  size: 16,
+                                  color: AppColors.textSubtle,
+                                ),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                tooltip: lang.t('edit_entry'),
+                                onPressed: () => _showEditPersonalLedgerDialog(
+                                  item['raw'] as PersonalLedgerEntryModel,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       );

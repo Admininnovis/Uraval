@@ -119,8 +119,8 @@ class LedgerService {
     final res = await ApiService.post(
       '${ApiEndpoints.people}?autoLink=$autoLink',
       body: {
-        'name': name.trim(),
-        'village': village.trim(),
+        'name': name.trim().toUpperCase(),
+        'village': village.trim().toUpperCase(),
         'notes': notes?.trim() ?? '',
       },
     );
@@ -154,8 +154,8 @@ class LedgerService {
     await ApiService.put(
       ApiEndpoints.personDetail(id),
       body: {
-        'name': name.trim(),
-        'village': village.trim(),
+        'name': name.trim().toUpperCase(),
+        'village': village.trim().toUpperCase(),
         'notes': notes?.trim() ?? '',
       },
     );
@@ -192,5 +192,23 @@ class LedgerService {
       },
     );
     return PersonalLedgerEntryModel.fromJson(res['entry']);
+  }
+
+  static Future<void> updateLedgerEntry({
+    required String id,
+    required String eventName,
+    required num amount,
+    required DateTime date,
+    String? notes,
+  }) async {
+    await ApiService.put(
+      ApiEndpoints.updateLedgerEntry(id),
+      body: {
+        'eventName': eventName.trim(),
+        'amount': amount,
+        'date': date.toIso8601String().split('T')[0],
+        'notes': notes?.trim() ?? '',
+      },
+    );
   }
 }

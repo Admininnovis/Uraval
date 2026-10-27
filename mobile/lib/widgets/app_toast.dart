@@ -12,12 +12,6 @@ class AppToast {
   }) {
     if (!context.mounted) return;
 
-    // Intercept network offline signal
-    if (message.contains('NETWORK_OFFLINE')) {
-      showNetworkError(context);
-      return;
-    }
-
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
 

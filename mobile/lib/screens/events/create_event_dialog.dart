@@ -22,17 +22,18 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
   final _locationController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  String _eventType = 'Marriage';
+  String _eventType = 'Wedding';
   DateTime _eventDate = DateTime.now();
   bool _isLoading = false;
 
   final List<String> _eventTypes = [
-    'Marriage',
-    'Ear Piercing',
-    'House Warming',
-    'Puberty Function',
+    'Wedding',
+    'Housewarming',
+    'Seemantham',
     'Birthday',
-    'Other',
+    'Ear Piercing',
+    'Temple Function',
+    'Custom',
   ];
 
   @override

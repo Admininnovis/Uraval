@@ -23,6 +23,8 @@ class EventEntryModel {
     this.isOffline = false,
   });
 
+  String get village => personVillage;
+
   factory EventEntryModel.fromJson(Map<String, dynamic> json) {
     String pId = '';
     String pName = '';
