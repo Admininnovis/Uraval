@@ -11,7 +11,16 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final customUrl = prefs.getString(_customBaseUrlKey);
     if (customUrl != null && customUrl.isNotEmpty) {
-      ApiEndpoints.baseUrl = customUrl;
+      if (customUrl.contains('localhost') ||
+          customUrl.contains('10.0.2.2') ||
+          customUrl.contains('127.0.0.1')) {
+        await prefs.remove(_customBaseUrlKey);
+        ApiEndpoints.baseUrl = ApiEndpoints.defaultBaseUrl;
+      } else {
+        ApiEndpoints.baseUrl = customUrl;
+      }
+    } else {
+      ApiEndpoints.baseUrl = ApiEndpoints.defaultBaseUrl;
     }
   }
 
