@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { LayoutGrid, BookOpen, User, Settings } from 'lucide-react';
+import { LayoutGrid, BookOpen, User, Settings, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const MobileNav = () => {
@@ -23,6 +23,11 @@ const MobileNav = () => {
       icon: User, 
       path: '/personal-ledger', 
       label: language === 'ta' ? 'தனிப்பட்டவை' : 'Personal' 
+    },
+    { 
+      icon: ShieldCheck, 
+      path: '/subscription', 
+      label: language === 'ta' ? 'சந்தா' : 'Access' 
     },
     { 
       icon: Settings, 

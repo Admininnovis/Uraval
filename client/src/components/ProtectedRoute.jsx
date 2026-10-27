@@ -1,10 +1,12 @@
 import React, { useContext } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import UravinLoading from './UravinLoading';
+import AccessExpiredScreen from './AccessExpiredScreen';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useContext(AuthContext);
+  const { isAuthenticated, accountAccess, loading } = useContext(AuthContext);
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -14,7 +16,18 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If user is authenticated, check if their 6-month access has expired
+  const isExpired = accountAccess && (accountAccess.isAccessActive === false || accountAccess.status === 'expired');
+
+  if (isExpired) {
+    return <AccessExpiredScreen />;
+  }
+
+  return children;
 };
 
 export default ProtectedRoute;

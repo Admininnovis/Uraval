@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import UravinLoading from '../components/UravinLoading';
 import api from '../services/api';
-import { Book, ChevronLeft, Plus, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
+import { Book, ChevronLeft, Plus, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, Info, CheckCircle2, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import NotebookView from '../components/NotebookView';
 import { BananaTree, TempleGopuram, PalmLeafManuscript, KolamPattern, CornerMark } from '../components/Illustrations';
@@ -15,6 +15,7 @@ const EventLedgerDetail = () => {
   const [event, setEvent] = useState(null);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [paymentRequired, setPaymentRequired] = useState(false);
   const [isBookView, setIsBookView] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ENTRIES_PER_PAGE = 13;
@@ -60,22 +61,19 @@ const EventLedgerDetail = () => {
     }
   };
 
-  // Helper to normalize text for flexible comparison (strips punctuation, spaces, case-insensitive)
-  const normalize = (text) => (text || '').toLowerCase().replace(/[\s.,_-]/g, '');
+  // Helper to trim whitespace, collapse multiple spaces, and uppercase all for accurate exact comparison
+  const cleanCompare = (text) => (text || '').toString().trim().toUpperCase().replace(/\s+/g, ' ');
 
   const isNameMatching = (name1, name2) => {
-    const n1 = normalize(name1);
-    const n2 = normalize(name2);
+    const n1 = cleanCompare(name1);
+    const n2 = cleanCompare(name2);
     if (!n1 || !n2) return false;
-    if (n1 === n2 || n1.includes(n2) || n2.includes(n1)) return true;
-    const t1 = (name1 || '').toLowerCase().replace(/[.,_-]/g, ' ').trim().split(/\s+/).sort().join(' ');
-    const t2 = (name2 || '').toLowerCase().replace(/[.,_-]/g, ' ').trim().split(/\s+/).sort().join(' ');
-    return t1 === t2;
+    return n1 === n2;
   };
 
   const isVillageMatching = (v1, v2) => {
-    const c1 = normalize(v1);
-    const c2 = normalize(v2);
+    const c1 = cleanCompare(v1);
+    const c2 = cleanCompare(v2);
     if (!c1 && !c2) return true; // both empty
     if (!c1 || !c2) return false;
     return c1 === c2;
@@ -103,10 +101,10 @@ const EventLedgerDetail = () => {
   // Check if an existing entry has the exact same name, village AND note
   const duplicateWithExactNote = React.useMemo(() => {
     if (exactMatchesInCurrentLedger.length === 0) return null;
-    const currentNoteNorm = normalize(notes);
+    const currentNoteClean = cleanCompare(notes);
     return exactMatchesInCurrentLedger.find(en => {
-      const enNoteNorm = normalize(en.notes || en.personId?.notes);
-      return enNoteNorm === currentNoteNorm;
+      const enNoteClean = cleanCompare(en.notes || en.personId?.notes);
+      return enNoteClean === currentNoteClean;
     });
   }, [exactMatchesInCurrentLedger, notes]);
 
@@ -119,11 +117,20 @@ const EventLedgerDetail = () => {
   const fetchEventDetails = async () => {
     try {
       const response = await api.get(`/events/${id}`);
-      setEvent(response.data.event);
+      const evt = response.data.event;
+      if (!evt.isLegacy && (!evt.isPaid || evt.status !== 'active')) {
+        setPaymentRequired(true);
+        return;
+      }
+      setEvent(evt);
       setEntries(response.data.entries);
       setCurrentPage(1); // Reset to first page on fetch
     } catch (error) {
-      console.error('Error fetching event details:', error);
+      if (error.response?.status === 403 && error.response?.data?.error === 'BOOKLET_PAYMENT_REQUIRED') {
+        setPaymentRequired(true);
+      } else {
+        console.error('Error fetching event details:', error);
+      }
     } finally {
       setLoading(false);
     }
@@ -358,6 +365,28 @@ const EventLedgerDetail = () => {
       </div>
     </Layout>
   );
+
+  if (paymentRequired) {
+    return (
+      <Layout>
+        <div className="max-w-md mx-auto my-16 p-8 bg-[#FAF7F2] border-2 border-amber-600/50 rounded-2xl text-center shadow-lg font-sans">
+          <div className="w-14 h-14 mx-auto rounded-full bg-amber-100 flex items-center justify-center text-amber-800 mb-4">
+            <Lock size={28} />
+          </div>
+          <h2 className="text-xl font-bold font-serif text-[#432C20] mb-2">Booklet Activation Required</h2>
+          <p className="text-sm text-stone-600 mb-6 leading-relaxed">
+            This booklet requires ₹150 one-time payment (incl. 18% GST) before it can be opened or entries can be added.
+          </p>
+          <Link
+            to="/events"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#432C20] text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-[#322118] transition shadow"
+          >
+            Back to Event Ledger
+          </Link>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!event) return <Layout><div className="text-center mt-20 text-xl font-tamil">{t('eventLedgerDetail.ledgerNotFound')}</div></Layout>;
 

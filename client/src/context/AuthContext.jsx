@@ -1,12 +1,24 @@
 import React, { createContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import api, { billingApi } from '../services/api';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [accountAccess, setAccountAccess] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
+
+  const fetchAccess = async () => {
+    try {
+      const res = await billingApi.getAccessStatus();
+      setAccountAccess(res.data.access);
+      return res.data.access;
+    } catch (e) {
+      console.warn('Could not fetch account access status:', e);
+      return null;
+    }
+  };
 
   useEffect(() => {
     const verifyToken = async () => {
@@ -14,6 +26,7 @@ export const AuthProvider = ({ children }) => {
         try {
           const response = await api.get('/auth/me');
           setUser(response.data.user);
+          await fetchAccess();
         } catch (error) {
           localStorage.removeItem('token');
           setToken(null);
@@ -30,6 +43,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', response.data.token);
     setToken(response.data.token);
     setUser(response.data.user);
+    await fetchAccess();
     return response.data;
   };
 
@@ -42,6 +56,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', response.data.token);
     setToken(response.data.token);
     setUser(response.data.user);
+    await fetchAccess();
     return response.data;
   };
 
@@ -49,12 +64,15 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+    setAccountAccess(null);
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        accountAccess,
+        refreshAccountAccess: fetchAccess,
         token,
         loading,
         login,

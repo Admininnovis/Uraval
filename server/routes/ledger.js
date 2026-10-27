@@ -7,10 +7,12 @@ import {
   updateLedgerEntry,
 } from '../controllers/ledgerController.js';
 import { protect } from '../middleware/auth.js';
+import { requireActiveAccountAccess } from '../middleware/checkAccess.js';
 
 const router = express.Router();
 
 router.use(protect);
+router.use(requireActiveAccountAccess);
 
 router.post(
   '/',

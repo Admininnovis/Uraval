@@ -3,29 +3,22 @@ import EventEntry from '../models/EventEntry.js';
 import Person from '../models/Person.js';
 
 export const createEvent = async (req, res) => {
-  try {
-    const { eventName, eventType, eventDate, location, description } = req.body;
-
-    let event = new Event({
-      eventName: eventName.trim().toUpperCase(),
-      eventType,
-      eventDate,
-      location: location ? location.trim().toUpperCase() : '',
-      description,
-      createdBy: req.user.id,
-    });
-
-    await event.save();
-    res.status(201).json({ message: 'Event created successfully', event });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  return res.status(402).json({
+    error: 'BOOKLET_PAYMENT_REQUIRED',
+    message: 'Booklet creation requires ₹150 payment (incl. GST). Please initiate via /api/billing/booklet-purchase.',
+  });
 };
 
 export const getEvents = async (req, res) => {
   try {
     const { page = 1, limit = 10, eventType } = req.query;
-    let query = { createdBy: req.user.id };
+    let query = {
+      createdBy: req.user.id,
+      $or: [
+        { isPaid: true, status: 'active' },
+        { isLegacy: true },
+      ],
+    };
 
     if (eventType) {
       query.eventType = eventType;
@@ -70,6 +63,14 @@ export const getEventById = async (req, res) => {
 
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
+    }
+
+    if (!event.isLegacy && (!event.isPaid || event.status !== 'active')) {
+      return res.status(403).json({
+        error: 'BOOKLET_PAYMENT_REQUIRED',
+        message: 'Booklet creation payment is pending. Payment of ₹150 is required to open this booklet.',
+        isPaid: false,
+      });
     }
 
     const entries = await EventEntry.find({ eventId: event._id })
@@ -155,6 +156,13 @@ export const addEventEntry = async (req, res) => {
 
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
+    }
+
+    if (!event.isLegacy && (!event.isPaid || event.status !== 'active')) {
+      return res.status(403).json({
+        error: 'BOOKLET_PAYMENT_REQUIRED',
+        message: 'Booklet creation payment is pending. Payment of ₹150 is required before adding entries.',
+      });
     }
 
     const person = await Person.findOne({

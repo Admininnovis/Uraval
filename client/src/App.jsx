@@ -15,12 +15,15 @@ import EventLedgerDetail from './pages/EventLedgerDetail';
 import PersonalLedger from './pages/PersonalLedger';
 import PersonalLedgerDetail from './pages/PersonalLedgerDetail';
 import Settings from './pages/Settings';
+import Subscription from './pages/Subscription';
+import AccessExpiredModal from './components/AccessExpiredModal';
 
 function App() {
   return (
     <Router>
       <LanguageProvider>
         <AuthProvider>
+          <AccessExpiredModal />
           <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -70,6 +73,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subscription"
+            element={
+              <ProtectedRoute>
+                <Subscription />
               </ProtectedRoute>
             }
           />

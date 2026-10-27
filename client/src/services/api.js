@@ -25,9 +25,26 @@ api.interceptors.response.use(
       if (currentPath !== '/login' && currentPath !== '/register') {
         window.location.href = '/login';
       }
+    } else if (
+      error.response?.status === 403 &&
+      (error.response?.data?.code === 'ACCOUNT_ACCESS_EXPIRED' || error.response?.data?.error === 'ACCOUNT_ACCESS_EXPIRED')
+    ) {
+      // Broadcast event for application access expired modal
+      window.dispatchEvent(new CustomEvent('uravuu:access_expired', { detail: error.response.data }));
     }
     return Promise.reject(error);
   }
 );
+
+// Billing & Subscription API helpers
+export const billingApi = {
+  getAccessStatus: () => api.get('/billing/access-status'),
+  createMaintenancePurchase: () => api.post('/billing/maintenance-purchase'),
+  createBookletPurchase: (data) => api.post('/billing/booklet-purchase', data),
+  verifyPayment: (data) => api.post('/billing/verify-payment', data),
+  recoverPurchaseStatus: (reference) => api.get(`/billing/purchases/${reference}/recover`),
+  getUserPurchases: () => api.get('/billing/purchases'),
+  getReceipt: (reference) => api.get(`/billing/receipt/${reference}`),
+};
 
 export default api;

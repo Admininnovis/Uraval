@@ -11,6 +11,9 @@ import eventRoutes from './routes/event.js';
 import ledgerRoutes from './routes/ledger.js';
 import reportRoutes from './routes/report.js';
 import syncRoutes from './routes/sync.js';
+import billingRoutes from './routes/billing.js';
+import adminRoutes from './routes/admin.js';
+import { startReconciliationWorker } from './services/reconciliationService.js';
 
 dotenv.config();
 
@@ -20,7 +23,15 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+
+// Raw body capture for webhook signature verification
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 
 // Database connection
@@ -33,6 +44,13 @@ app.use('/api/events', eventRoutes);
 app.use('/api/ledger', ledgerRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/billing', billingRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Start background reconciliation worker
+if (process.env.NODE_ENV !== 'test') {
+  startReconciliationWorker();
+}
 
 // Health check
 app.get('/health', (req, res) => {

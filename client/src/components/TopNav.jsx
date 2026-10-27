@@ -9,7 +9,8 @@ import {
   User,
   Settings,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  ShieldCheck
 } from 'lucide-react';
 
 const TopNav = () => {
@@ -33,6 +34,7 @@ const TopNav = () => {
     { label: language === 'ta' ? 'கண்ணோட்டம்' : 'Overview', icon: LayoutGrid, path: '/' },
     { label: language === 'ta' ? 'நிகழ்வு குறிப்பேடு' : 'Event Ledger', icon: BookOpen, path: '/events' },
     { label: language === 'ta' ? 'தனிப்பட்ட கணக்கு' : 'Personal Ledger', icon: User, path: '/personal-ledger' },
+    { label: language === 'ta' ? 'சந்தா' : 'Subscription', icon: ShieldCheck, path: '/subscription' },
     { label: language === 'ta' ? 'அமைப்புகள்' : 'Settings', icon: Settings, path: '/settings' },
   ];
 
@@ -111,6 +113,14 @@ const TopNav = () => {
                   <p className="font-bold text-[#432C20] truncate">{user?.name || 'User'}</p>
                   <p className="text-xs text-stone-500 truncate">{user?.email || ''}</p>
                 </div>
+                <Link
+                  to="/subscription"
+                  onClick={() => setDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-[#432C20] hover:bg-[#EDE5D8] transition-colors"
+                >
+                  <ShieldCheck size={16} className="text-[#B68A3D]" />
+                  <span>{language === 'ta' ? 'சந்தா & பராமரிப்பு' : 'Subscription & Access'}</span>
+                </Link>
                 <Link
                   to="/settings"
                   onClick={() => setDropdownOpen(false)}

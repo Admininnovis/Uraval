@@ -10,6 +10,7 @@ import {
   updateEventEntry,
 } from '../controllers/eventController.js';
 import { protect } from '../middleware/auth.js';
+import { requireActiveAccountAccess } from '../middleware/checkAccess.js';
 
 const router = express.Router();
 
@@ -26,10 +27,11 @@ router.post(
 );
 
 router.get('/', getEvents);
-router.get('/:id', getEventById);
+router.get('/:id', requireActiveAccountAccess, getEventById);
 
 router.put(
   '/:id',
+  requireActiveAccountAccess,
   [
     body('eventName').optional().trim(),
     body('eventType').optional(),
@@ -38,10 +40,11 @@ router.put(
   updateEvent
 );
 
-router.delete('/:id', deleteEvent);
+router.delete('/:id', requireActiveAccountAccess, deleteEvent);
 
 router.post(
   '/:eventId/entries',
+  requireActiveAccountAccess,
   [
     body('personId').notEmpty().withMessage('Person ID is required'),
     body('amount').isNumeric().withMessage('Valid amount is required'),
@@ -51,6 +54,7 @@ router.post(
 
 router.put(
   '/:eventId/entries/:entryId',
+  requireActiveAccountAccess,
   [
     body('amount').optional().isNumeric(),
   ],

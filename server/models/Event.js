@@ -33,6 +33,28 @@ const eventSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    status: {
+      type: String,
+      enum: ['draft', 'active'],
+      default: 'active', // Legacy booklets default to active
+    },
+    isPaid: {
+      type: Boolean,
+      default: true, // Legacy booklets default to paid
+    },
+    isLegacy: {
+      type: Boolean,
+      default: false,
+    },
+    purchaseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Purchase',
+      default: null,
+    },
+    activatedAt: {
+      type: Date,
+      default: null,
+    },
     version: {
       type: Number,
       default: 1,

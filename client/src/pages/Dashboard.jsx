@@ -2,7 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import UravinLoading from '../components/UravinLoading';
-import api from '../services/api';
+import api, { billingApi } from '../services/api';
+import { loadRazorpayScript } from '../utils/razorpay';
 import { useLanguage } from '../context/LanguageContext';
 import { AuthContext } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -102,6 +103,8 @@ const Dashboard = () => {
     description: ''
   });
   const [creatingEvent, setCreatingEvent] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState('');
+  const [paymentError, setPaymentError] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -121,26 +124,114 @@ const Dashboard = () => {
   const handleCreateEvent = async (e) => {
     e.preventDefault();
     setCreatingEvent(true);
+    setPaymentError(null);
+    setPaymentMessage('Preparing booklet payment...');
+
     try {
-      const res = await api.post('/events', eventForm);
-      setShowNewEventModal(false);
-      setEventForm({
-        eventName: '',
-        eventType: 'Marriage',
-        eventDate: new Date().toISOString().split('T')[0],
-        location: '',
-        description: ''
-      });
-      if (res.data?.event?._id) {
-        navigate(`/events/${res.data.event._id}`);
-      } else {
-        fetchDashboardData();
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error('Could not load payment checkout SDK. Please check your internet connection.');
       }
+
+      const res = await billingApi.createBookletPurchase(eventForm);
+      const { purchaseReference, amount, currency, razorpayOrderId, razorpayKeyId } = res.data;
+
+      setPaymentMessage('Opening Razorpay Checkout...');
+
+      const options = {
+        key: razorpayKeyId,
+        amount: amount,
+        currency: currency || 'INR',
+        name: 'Uravuu - Moi Ledger',
+        description: 'Booklet Creation (One-time ₹150 incl. GST)',
+        order_id: razorpayOrderId,
+        notes: {
+          application: 'uravuu',
+          internal_purchase_reference: purchaseReference,
+          payment_purpose: 'booklet_creation',
+          event_name: eventForm.eventName,
+        },
+        theme: {
+          color: '#8B0000',
+        },
+        handler: async function (checkoutRes) {
+          setPaymentMessage('Verifying payment and creating booklet...');
+          try {
+            const verifyRes = await billingApi.verifyPayment({
+              purchaseReference,
+              razorpay_order_id: checkoutRes.razorpay_order_id,
+              razorpay_payment_id: checkoutRes.razorpay_payment_id,
+              razorpay_signature: checkoutRes.razorpay_signature,
+            });
+
+            if (verifyRes.data.success) {
+              setPaymentMessage('Payment verified! Opening your new booklet...');
+              const newBookletId = verifyRes.data.bookletId || verifyRes.data.fulfillmentResult?.bookletId;
+              setShowNewEventModal(false);
+              setEventForm({
+                eventName: '',
+                eventType: 'Marriage',
+                eventDate: new Date().toISOString().split('T')[0],
+                location: '',
+                description: '',
+              });
+              setTimeout(() => {
+                if (newBookletId) {
+                  navigate(`/events/${newBookletId}`);
+                } else {
+                  fetchDashboardData();
+                }
+              }, 1000);
+            } else {
+              throw new Error(verifyRes.data.message || 'Payment verification failed');
+            }
+          } catch (verErr) {
+            console.error('Verification error:', verErr);
+            setPaymentError(verErr.response?.data?.message || 'Payment verification failed');
+            setCreatingEvent(false);
+          }
+        },
+        modal: {
+          ondismiss: async function () {
+            setPaymentMessage('Checking payment status...');
+            try {
+              const recoverRes = await billingApi.recoverPurchaseStatus(purchaseReference);
+              if (recoverRes.data.status === 'captured') {
+                const recoveredId = recoverRes.data.bookletId || recoverRes.data.purchase?.booklet;
+                setPaymentMessage('Payment confirmed! Opening your booklet...');
+                setShowNewEventModal(false);
+                setTimeout(() => {
+                  if (recoveredId) {
+                    navigate(`/events/${recoveredId}`);
+                  } else {
+                    fetchDashboardData();
+                  }
+                }, 1000);
+                return;
+              }
+            } catch (e) {
+              console.warn(e);
+            }
+            setCreatingEvent(false);
+            setPaymentMessage('');
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (failRes) {
+        console.error('Payment failed:', failRes);
+        setPaymentError(`Payment failed: ${failRes.error?.description || 'Transaction unsuccessful'}`);
+        setCreatingEvent(false);
+        setPaymentMessage('');
+      });
+
+      rzp.open();
     } catch (err) {
-      console.error('Error creating event:', err);
-      alert(t('dashboard.failedToCreate'));
-    } finally {
+      console.error('Error creating booklet purchase:', err);
+      setPaymentError(err.response?.data?.message || err.message || t('dashboard.failedToCreate'));
       setCreatingEvent(false);
+      setPaymentMessage('');
     }
   };
 
@@ -574,7 +665,29 @@ const Dashboard = () => {
                   />
                 </div>
 
-                <div className="pt-3 flex justify-end gap-2.5">
+                {/* Booklet Fee Notice */}
+                <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
+                  <div>
+                    <p className="font-bold">Booklet Creation Fee</p>
+                    <p className="text-[11px] text-amber-800">One-time payment • Includes 18% GST</p>
+                  </div>
+                  <span className="font-bold text-base text-[#432C20]">₹150</span>
+                </div>
+
+                {paymentMessage && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-xs font-semibold flex items-center gap-2">
+                    <Clock size={14} className="animate-spin text-blue-600" />
+                    <span>{paymentMessage}</span>
+                  </div>
+                )}
+
+                {paymentError && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-semibold">
+                    {paymentError}
+                  </div>
+                )}
+
+                <div className="pt-2 flex justify-end gap-2.5">
                   <button
                     type="button"
                     onClick={() => setShowNewEventModal(false)}
@@ -585,9 +698,9 @@ const Dashboard = () => {
                   <button
                     type="submit"
                     disabled={creatingEvent}
-                    className="px-6 py-2 bg-[#432C20] hover:bg-[#322118] text-[#FAF7F0] rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm transition-all min-h-[44px]"
+                    className="px-6 py-2 bg-[#432C20] hover:bg-[#322118] text-[#FAF7F0] rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm transition-all min-h-[44px] flex items-center gap-2"
                   >
-                    {creatingEvent ? t('common.creating') : t('dashboard.openLedger')}
+                    {creatingEvent ? 'Processing...' : 'Pay ₹150 & Create Booklet'}
                   </button>
                 </div>
               </form>
